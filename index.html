@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta name="darkreader-lock">
+
+	<link rel="manifest" href="data/manifest.json" />
+
+	<link rel="stylesheet" href="css/main.css">
+
+	<script src="js/app.js"></script>
+	<script src="js/hchat.js"></script>
+	<script src="js/seventv.js"></script>
+	<script src="js/bttv.js"></script>
+	<script src="js/ffz.js"></script>
+	<script src="js/recentmessages.js"></script>
+	<script src="js/irc.js"></script>
+	<script src="js/parser.js"></script>
+	<script src="js/twitch.js"></script>
+
+	<script>
+		// PWA install button
+		{
+			var installer = null;
+			onbeforeinstallprompt = (event) => {
+				if (installer) {
+					installer = event;
+					return;
+				};
+
+				installer = event;
+				var b = document.createElement("button");
+				b.innerText = "Install";
+				b.onclick = () => installer.prompt();
+				// document.getElementById("bdy").appendChild(b);
+			};
+		}
+
+		// console.log(localStorage.getItem("test"));
+		// localStorage.setItem("test", "MyCustomValue");
+	</script>
+</head>
+
+<body onload="loaded()">
+	<div class="topbar">
+
+	</div>
+
+	<div class="tlbox">
+		<div id="timeline">
+		</div>
+	</div>
+
+	<div class="inputBar">
+		<button onclick="authRedirect()">Log</button>
+		<button>😃</button>
+		<input id="textInput" type="text" />
+		<button>➤</button>
+	</div>
+	<div id="emoteSuggestions">
+	</div>
+</body>
+
+</html>

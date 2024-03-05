@@ -1,0 +1,47 @@
+[
+	{
+		"set_id": "dev",
+		"versions": [
+			{
+				"id": "1",
+				"image_url_1x": "/assets/badges/dev-up.png",
+				"image_url_2x": "/assets/badges/dev-up.png",
+				"image_url_4x": "/assets/badges/dev-up.png",
+				"title": "Developer",
+				"description": "Hydrogenino Developer",
+				"click_action": "visit_url",
+				"click_url": "https://ryhon.xyz"
+			}
+		]
+	},
+	{
+		"set_id": "ryhon",
+		"versions": [
+			{
+				"id": "1",
+				"image_url_1x": "/assets/badges/ryhon.png",
+				"image_url_2x": "/assets/badges/ryhon.png",
+				"image_url_4x": "/assets/badges/ryhon.png",
+				"title": "Ryhon",
+				"description": "Ryhon",
+				"click_action": "visit_url",
+				"click_url": "https://ryhon.xyz"
+			}
+		]
+	},
+	{
+		"set_id": "felix",
+		"versions": [
+			{
+				"id": "1",
+				"image_url_1x": "/assets/badges/felix.webp",
+				"image_url_2x": "/assets/badges/felix.webp",
+				"image_url_4x": "/assets/badges/felix.webp",
+				"title": "Ryhon",
+				"description": "Ryhon",
+				"click_action": "visit_url",
+				"click_url": "https://ryhon.xyz"
+			}
+		]
+	}
+]

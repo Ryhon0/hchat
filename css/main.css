@@ -1,0 +1,147 @@
+@font-face {
+	font-family: Twemoji;
+	src: url(/assets/Twemoji.ttf);
+}
+
+@font-face {
+	font-family: FreeSans;
+	src: url(/assets/FreeSans.ttf);
+}
+
+html,
+body {
+	width: 100%;
+	height: 100%;
+	padding: 0px;
+	margin: 0px;
+	border: none;
+	display: flex;
+	flex-direction: column;
+	background-color: #333;
+	color: #efefef;
+
+	font-family: FreeSans, Twemoji, Sans;
+	font-size: 24px;
+}
+
+::-webkit-scrollbar {
+	width: 18px;
+}
+
+::-webkit-scrollbar-track {
+	background: #383838;
+}
+
+::-webkit-scrollbar-thumb {
+	background: #444;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: #555;
+}
+
+.inputBar,
+.topbar {
+	display: flex;
+	gap: 0.25em;
+	width: 100%;
+	height: 3em;
+	background-color: #222222;
+	padding: 0.25em;
+	box-sizing: border-box;
+}
+
+.inputBar>input {
+	color: #EEE;
+	background-color: #333;
+	border: none;
+	border-radius: 6px;
+	flex-grow: 1;
+	font-size: 1em;
+}
+
+button {
+	background-color: #383838;
+	border: none;
+	border-radius: 8px;
+	aspect-ratio: 1;
+	font-size: 1.25em;
+	cursor: pointer;
+}
+
+.tlbox {
+	flex-grow: 1;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column-reverse;
+}
+
+#timeline {
+	word-wrap: break-word;
+}
+
+#timeline>li {
+	padding: 0.2em 1em;
+	list-style-type: none;
+}
+
+#timeline>li:nth-child(2n) {
+	background-color: rgba(0, 0, 0, 0.05);
+}
+
+#timeline>li a.link
+{
+	color: #3a3ae5;
+}
+
+#timeline>li.mentioned
+{
+	background-color: rgb(168 93 6);
+}
+
+#timeline>li.mentioned:nth-child(2n)
+{
+	background-color: rgb(103 57 4);
+}
+
+#timeline>li.first
+{
+	background-color: rgb(52 112 28);
+}
+
+.mention 
+{
+	font-weight: 600;
+}
+
+.badges>img {
+	height: 1.5em;
+	padding-right: 8px;
+	vertical-align: bottom;
+}
+
+.emote {
+	display: inline-grid;
+	text-align: center;
+	align-items: end;
+	vertical-align: bottom;
+	justify-items: center;
+}
+.emote > img
+{
+	height: 1.5em;
+	grid-column: 1;
+	grid-row: 1	;
+}
+
+.gradient
+{
+	background: -webkit-linear-gradient(#eee, #333);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+}
+
+#emoteSuggestions {
+	position: absolute;
+	top: 0px;
+}

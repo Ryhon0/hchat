@@ -1,0 +1,13 @@
+{
+	"name": "Hydrogenino",
+	"start_url": "/",
+	"display": "standalone",
+	"description": "Lightweight Twitch chat client",
+	"icons": [
+		{
+			"src": "/icon.png",
+			"type": "image/png",
+			"sizes": "512x512"
+		}
+	]
+}
