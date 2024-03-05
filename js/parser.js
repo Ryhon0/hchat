@@ -86,7 +86,8 @@ function parseMessageComponents(input, msg, emotes) {
 			var end = Number.parseInt(s.substring(dashPos + 1, s.length));
 			var id = s.substring(0, colonPos);
 
-			var name = input.substring(start, end + 1);
+			// Workaround around Twitch using UTF-16
+			var name = [...input].slice(start, end + 1).join('');
 			twitchEmotes[name] = "https://static-cdn.jtvnw.net/emoticons/v2/" + id + "/default/dark/";
 		}
 	}
@@ -152,6 +153,7 @@ function parseMessageComponents(input, msg, emotes) {
 		}
 		else 
 		*/
+
 		if (s in emotes || s in twitchEmotes) {
 			var emote = emotes[s];
 			if (!emote) {
