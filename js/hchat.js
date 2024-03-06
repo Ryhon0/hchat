@@ -115,6 +115,7 @@ class HChat {
 	globalTwitchBadges = {}
 	globalFFZBadgeOwners = {}
 	globalFFZBadges = {}
+	bttvBadges = {}
 
 	async init() {
 		// Emojis
@@ -226,6 +227,40 @@ class HChat {
 				console.error("Failed to load global BTTV emotes");
 				console.error(e);
 			}
+
+			// Badges
+			{
+				var br = await this.BTTV.getBadges(BTTVProvider.Twitch);
+				for(var i in br)
+				{
+					var bo = br[i];
+					var uid = Number(bo.providerId);
+
+					var b = new Badge();
+					b.provider = hchatEmoteProviderBTTV;
+					b.id = bo.id;
+					b.title = bo.badge.description;
+					b.img = bo.badge.svg;
+
+					this.bttvBadges[uid] = b;
+				}
+
+				/**
+				 * @param { Badge[] } list 
+				 * @param { Message } msg
+				 * @param { HChatChannel } hchannel
+				 * @returns { Badge[] }
+				 */
+				function getBTTVBadges(list, msg, hchannel) {
+					var uid = Number(msg.tags["user-id"]);
+
+					if(uid in hchannel.hchat.bttvBadges)
+						list.push(hchannel.hchat.bttvBadges[uid]);
+
+					return list;
+				};
+				this.badgePredictates.push(getBTTVBadges);
+			}
 		}
 
 		// Global FFZ emotes
@@ -290,7 +325,6 @@ class HChat {
 					if (hchannel.ffzModBadge) {
 						for (var i in list) {
 							if (list[i].id.startsWith("moderator/") && list[i].provider == "twitch") {
-								console.log(list[i]);
 								list[i] = hchannel.ffzModBadge;
 								break;
 							}
