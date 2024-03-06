@@ -51,7 +51,7 @@ class TwitchAPI {
 	}
 
 	async getGlobalEmotes() {
-		if(this.useIVR())
+		if (this.useIVR())
 			return await getJSON(this.BaseIVRURL + "/v2/badges/global");
 		else
 			return (await this.getJSONAuthenticated(this.BaseHelixURL + "/chat/emotes/global")).data;
@@ -79,6 +79,14 @@ class TwitchAPI {
 			return (await this.getJSONAuthenticated(this.BaseHelixURL + "/chat/badges?broadcaster_id=" + channel_id)).data;
 	}
 
+	async getCheermotes() {
+		return (await this.getJSONAuthenticated(this.BaseHelixURL + "/bits/cheermotes")).data;
+	}
+
+	async getChannelCheermotes(channel_id) {
+		return (await this.getJSONAuthenticated(this.BaseHelixURL + "/bits/cheermotes?broadcaster_id=" + channel_id)).data;
+	}
+
 	async getJSONAuthenticated(url, opts = { timeout: 5000 }) {
 		opts.headers =
 		{
@@ -89,8 +97,7 @@ class TwitchAPI {
 	}
 }
 
-function parseTwitchBadges(badges)
-{
+function parseTwitchBadges(badges) {
 	var list = {};
 	for (b of badges) {
 		for (v of b.versions) {
@@ -105,4 +112,26 @@ function parseTwitchBadges(badges)
 		}
 	}
 	return list;
+}
+
+function parseCheermotes(data, custom = false) {
+	var cl = {};
+	for (var i in data) {
+		var c = data[i];
+		var prefix = c.prefix;
+
+		if (custom == (c.type == "channel_custom"))
+			for (var ti in c.tiers) {
+				var t = c.tiers[ti];
+
+				var ce = new CheerMote();
+				ce.value = Number(t.id);
+				ce.name = prefix + t.id;
+				ce.color = t.color;
+				ce.urls = t.images.dark.animated;
+
+				cl[ce.name.toLowerCase()] = ce;
+			}
+	}
+	return cl;
 }

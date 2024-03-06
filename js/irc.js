@@ -79,7 +79,7 @@ function parseTags(tags) {
 
 	parsedTags.forEach(tag => {
 		let parsedTag = tag.split('=');
-		let tagValue = parsedTag[1];
+		let tagValue = escapeTagValue(parsedTag[1]);
 
 		dictParsedTags[parsedTag[0]] = tagValue;
 	});
@@ -99,6 +99,10 @@ function parseCommand(rawCommandComponent) {
 		case 'CLEARMSG':
 		case 'HOSTTARGET':
 		case 'PRIVMSG':
+		case 'WHISPER':
+		case 'USERSTATE':
+		case 'ROOMSTATE':
+		case 'USERNOTICE':
 			parsedCommand = {
 				command: commandParts[0],
 				channel: commandParts[1]
@@ -120,13 +124,6 @@ function parseCommand(rawCommandComponent) {
 				command: commandParts[0]
 			}
 			break;
-		case 'USERSTATE':
-		case 'ROOMSTATE':
-			parsedCommand = {
-				command: commandParts[0],
-				channel: commandParts[1]
-			}
-			break;
 		case 'RECONNECT':
 			console.log('The Twitch IRC server is about to terminate the connection for maintenance.')
 			parsedCommand = {
@@ -137,11 +134,6 @@ function parseCommand(rawCommandComponent) {
 			console.log(`Unsupported IRC command: ${commandParts[2]}`)
 			return null;
 		case '001':
-			parsedCommand = {
-				command: commandParts[0],
-				channel: commandParts[1]
-			}
-			break;
 		case '002':
 		case '003':
 		case '004':
@@ -151,6 +143,11 @@ function parseCommand(rawCommandComponent) {
 		case '375':
 		case '376':
 			return null;
+			parsedCommand = {
+				command: commandParts[0],
+				channel: commandParts[1]
+			}
+			break;
 		default:
 			if(commandParts[0])
 				console.log(`\nUnexpected command: '${commandParts[0]}'\n`);

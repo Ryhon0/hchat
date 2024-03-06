@@ -64,14 +64,10 @@ class Mention {
 }
 
 class CheerMote {
-	/**
-	 * @type { CheerMoteInfo }
-	 */
-	info
-}
-
-class CheerMoteInfo {
-
+	name
+	color
+	value
+	urls = []
 }
 
 // Make a GET request asyncronously and return a JSON
@@ -112,6 +108,7 @@ class HChat {
 	 */
 	badgePredictates = [];
 
+	globalCheerMotes = {}
 	globalTwitchBadges = {}
 	globalFFZBadgeOwners = {}
 	globalFFZBadges = {}
@@ -170,14 +167,15 @@ class HChat {
 			 * @returns { Badge[] }
 			 */
 			function getTwitchBadges(list, msg, hchannel) {
-				for (b of msg.tags.badges.split(',')) {
-					if (!b) continue;
+				if (msg.tags.badges)
+					for (b of msg.tags.badges.split(',')) {
+						if (!b) continue;
 
-					if (b in hchannel.channelTwitchBadges)
-						list.push(hchannel.channelTwitchBadges[b]);
-					else if (b in hchannel.hchat.globalTwitchBadges)
-						list.push(hchannel.hchat.globalTwitchBadges[b]);
-				}
+						if (b in hchannel.channelTwitchBadges)
+							list.push(hchannel.channelTwitchBadges[b]);
+						else if (b in hchannel.hchat.globalTwitchBadges)
+							list.push(hchannel.hchat.globalTwitchBadges[b]);
+					}
 				return list;
 			}
 			this.badgePredictates.push(getTwitchBadges);
@@ -234,8 +232,7 @@ class HChat {
 			// Badges
 			{
 				var br = await this.BTTV.getBadges(BTTVProvider.Twitch);
-				for(var i in br)
-				{
+				for (var i in br) {
 					var bo = br[i];
 					var uid = Number(bo.providerId);
 
@@ -257,7 +254,7 @@ class HChat {
 				function getBTTVBadges(list, msg, hchannel) {
 					var uid = Number(msg.tags["user-id"]);
 
-					if(uid in hchannel.hchat.bttvBadges)
+					if (uid in hchannel.hchat.bttvBadges)
 						list.push(hchannel.hchat.bttvBadges[uid]);
 
 					return list;
@@ -304,15 +301,14 @@ class HChat {
 				 * @returns { Badge[] }
 				 */
 				function getFFZBadges(list, msg, hchannel) {
-					var uname = msg.source.nick.toLowerCase();
+					var uname = msg.user.toLowerCase();
 					var uid = Number(msg.tags["user-id"]);
 
 					var globalbot = false;
 					for (var i in hchannel.hchat.globalFFZBadgeOwners) {
-						if(i == 2 && hchannel.ffzBotBadgeOwnerIDs.indexOf(uid) != -1)
+						if (i == 2 && hchannel.ffzBotBadgeOwnerIDs.indexOf(uid) != -1)
 							list.push(hchannel.hchat.globalFFZBadges[2]);
-						else if (hchannel.hchat.globalFFZBadgeOwners[i].indexOf(uname) != -1)
-						{
+						else if (hchannel.hchat.globalFFZBadgeOwners[i].indexOf(uname) != -1) {
 							list.push(hchannel.hchat.globalFFZBadges[i]);
 						}
 					}
@@ -419,12 +415,17 @@ class HChat {
 		}
 		return list;
 	}
+
+	async getGlobalCheermotes() {
+		this.globalCheerMotes = parseCheermotes(await this.Twitch.getCheermotes(), false);
+	}
 }
 
 class HChatChannel {
 	botList = [];
 	channelEmotes = {};
 	channelTwitchBadges = {};
+	channelCheerMotes = {}
 	/**
 	 * @type { HChat }
 	 */
@@ -638,29 +639,13 @@ class HChatChannel {
 				continue;
 			}
 
-			/*
-			if (msg.tags.bits && (s in cheermotes) && (msg.tags.bits >= cheermotes[s].amount)) {
-				var cheer = cheermotes[s];
-				var emoteContainer = document.createElement("span");
-				emoteContainer.classList = "emote";
-				emoteContainer.setAttribute('tooltip', s);
-				{
-					var img = document.createElement("img");
-					img.src = cheer.url;
-					img.alt = s;
-					emoteContainer.appendChild(img);
+			if (msg.tags.bits) {
+				var ce = this.channelCheerMotes[s.toLowerCase()] ?? this.hchat.globalCheerMotes[s.toLowerCase()];
+				if (ce && msg.tags.bits >= ce.value) {
+					comps.push(ce);
+					continue;
 				}
-				{
-					var amount = document.createElement("span");
-					amount.classList = "bitcount";
-					amount.style.color = cheer.color;
-					amount.innerText = s.substring(cheer.prefix.length);
-					emoteContainer.appendChild(amount);
-				}
-				container.appendChild(emoteContainer);
 			}
-			else 
-			*/
 
 			var emote = this.hchat.uniToEmoji[s] ?? this.channelEmotes[s] ?? this.hchat.globalEmotes[s] ?? twitchEmotes[s];
 			if (emote) {
@@ -715,6 +700,10 @@ class HChatChannel {
 		}
 
 		return comps;
+	}
+
+	async getChannelCheermotes() {
+		this.channelCheerMotes = parseCheermotes(await this.Twitch.getCheermotes(this.channelId), true);
 	}
 
 	isURL(text) {
