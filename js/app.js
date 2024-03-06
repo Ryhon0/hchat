@@ -31,14 +31,18 @@ var emojisByUni = {}
 var emojiKeys = []
 var textInput = null
 var emoteSuggestions = null
-var badges = {}
 var userCosmetics = {}
 /** @type { ChatClient } */
-var ws = null;
+var anonClient = null;
 /** @type { ChatClient } */
 var chatWS = null;
 var tl;
+
+var hchat = new HChat();
+var hchannel = new HChatChannel(hchat, Channel);
+
 async function loaded() {
+	// OAuth redirect handling
 	{
 		var atoken = new URLSearchParams(window.location.hash.substring(1)).get("access_token");
 		if (atoken) {
@@ -64,70 +68,21 @@ async function loaded() {
 		}
 	}
 
+	await hchat.init();
+	await hchannel.init();
+
 	textInput = document.getElementById("textInput");
 	emoteSuggestions = document.getElementById("emoteSuggestions");
-	userCosmetics = await getJSON("/data/user_cosmetics.json")
-
-	var twapi = new TwitchAPI();
-	badges =
-	{
-		...parseTwitchBadges(await twapi.getGlobalBadges()),
-		...parseTwitchBadges(await twapi.getChannelBadges(Channel)),
-		...parseTwitchBadges(await getJSON("/data/badges.json")),
-	};
-
-	emojis = await getJSON("/data/emoji_shortcodes.json");
-	for (ename in emojis) {
-		var euni = emojis[ename];
-		emojisByUni[euni] = ename;
-
-		function toCodePoint(unicodeSurrogates, sep) {
-			var
-				r = [],
-				c = 0,
-				p = 0,
-				i = 0;
-			while (i < unicodeSurrogates.length) {
-				c = unicodeSurrogates.charCodeAt(i++);
-				if (p) {
-					r.push((0x10000 + ((p - 0xD800) << 10) + (c - 0xDC00)).toString(16));
-					p = 0;
-				} else if (0xD800 <= c && c <= 0xDBFF) {
-					p = c;
-				} else {
-					r.push(c.toString(16));
-				}
-			}
-			return r.join(sep || '-');
-		}
-
-		var ei = new EmoteInfo();
-		ei.id = ename;
-		ei.name = ename;
-		ei.alias = euni;
-		ei.provider = "emoji";
-		var url = "/assets/twemoji/" + toCodePoint(euni, '-') + ".svg";
-		ei.urls =
-		{
-			1: url,
-			2: url,
-			3: url,
-			4: url,
-		}
-
-		emotes[euni] = ei;
-	}
-	emojiKeys = Object.keys(emojis);
-
 	tl = document.getElementById("timeline");
 
-	await loadChannel(Channel);
-	ws = new ChatClient();
-	ws.onMessage = (msg) => {
+	userCosmetics = await getJSON("/data/user_cosmetics.json")
+
+	anonClient = new ChatClient();
+	anonClient.onMessage = (msg) => {
 		console.log(msg);
 		processMessage(msg);
 	};
-	ws.join(ChannelName);
+	anonClient.join(ChannelName);
 
 	var login = localStorage.getItem("login");
 	if (login) {
@@ -174,37 +129,13 @@ function processMessage(pm) {
 	{
 		var bl = document.createElement("span");
 		bl.classList.add("badges");
-		var blist = [];
-
-		if (pm.tags) {
-			var uid = pm.tags["user-id"];
-			cosmetics = userCosmetics[uid];
-			if (cosmetics) {
-				for (b of cosmetics.badges.split(',')) {
-					if (!b) continue;
-
-					var split = b.split('/');
-					var id = split[0];
-					var ver = split[1];
-					blist.push(badges[id][ver]);
-				}
-			}
-		}
-
-		for (b of pm.tags.badges.split(',')) {
-			if (!b) continue;
-
-			var split = b.split('/');
-			var id = split[0];
-			var ver = split[1];
-
-			blist.push(badges[id][ver]);
-		}
-
-		for (ba of blist) {
+		
+		var blist = hchannel.getBadgesForMessage(pm);
+		for (var ba of blist) {
 			var bi = document.createElement("img");
 			bi.src = ba.img;
 			bi.alt = ba.title;
+			bi.style.background = ba.backgroundStyle;
 			bl.appendChild(bi);
 		}
 
@@ -232,13 +163,12 @@ function processMessage(pm) {
 	mi.appendChild(nameSpan);
 
 	var mentioned = false;
-	var comps = foldMessageComponents(parseMessageComponents(pm.content, pm, emotes));
+	var comps = hchannel.foldMessageComponents(hchannel.parseMessageComponents(pm.content, pm));
 	for (c of comps) {
 		if (c instanceof Emote) {
 			var info = c.info;
 			var img = document.createElement("img");
-			if (c.info.urls)
-				img.src = c.info.urls[2];
+			img.src = c.info.getImageURL(3);
 			img.alt = c.info.getName();
 
 			var imgspan = document.createElement("span");
@@ -247,7 +177,7 @@ function processMessage(pm) {
 
 			for (ov of c.overlays) {
 				var img = document.createElement("img");
-				img.src = ov.info.urls[2];
+				img.src = ov.info.getImageURL(3);
 				img.alt = c.info.getName();
 
 				imgspan.appendChild(img);
@@ -360,10 +290,15 @@ class ChatClient {
 	/** @type { Function } */
 	onMessage = (msg) => { console.log(msg); };
 
+	/**
+	 * @param { String } user 
+	 * @param { String } token 
+	 */
 	constructor(user, token) {
 		this.init(user, token);
 	}
 
+	/** @type { String } */
 	username
 
 	init(user, token) {

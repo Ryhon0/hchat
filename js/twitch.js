@@ -51,7 +51,10 @@ class TwitchAPI {
 	}
 
 	async getGlobalEmotes() {
-		return (await this.getJSONAuthenticated(this.BaseHelixURL + "/chat/emotes/global")).data;
+		if(this.useIVR())
+			return await getJSON(this.BaseIVRURL + "/v2/badges/global");
+		else
+			return (await this.getJSONAuthenticated(this.BaseHelixURL + "/chat/emotes/global")).data;
 	}
 
 	async getChannelEmotes(channel_id) {
@@ -88,19 +91,18 @@ class TwitchAPI {
 
 function parseTwitchBadges(badges)
 {
-	var o = {};
+	var list = {};
 	for (b of badges) {
-		var id = b.set_id;
-		var versions = {};
 		for (v of b.versions) {
+			var id = b.set_id + "/" + v.id;
 			var vo = new Badge();
 			vo.title = v.title;
-			vo.id = v.id;
+			vo.id = id;
 			vo.img = v.image_url_4x;
 			vo.description = v.description;
-			versions[v.id] = vo;
+			vo.provider = "twitch";
+			list[id] = vo;
 		}
-		o[id] = versions;
 	}
-	return o;
+	return list;
 }
