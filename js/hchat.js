@@ -389,6 +389,7 @@ class HChat {
 				2: "https://cdn.betterttv.net/emote/" + e.id + "/2x",
 				1: "https://cdn.betterttv.net/emote/" + e.id + "/1x",
 			};
+			ee.overlay = ["SoSnowy", "IceCold", "SantaHat", "TopHat", "ReinDeer", "CandyCane", "cvMask", "cvHazmat"].indexOf(e.code) != -1;
 
 			ee.name = e.code;
 			ee.provider = hchatEmoteProviderBTTV;
