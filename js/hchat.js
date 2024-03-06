@@ -215,6 +215,9 @@ class HChat {
 				console.error("Failed to load global 7TV emotes");
 				console.error(e);
 			}
+
+			// Here's where I would put the 7TV badge provider
+			// IF THEY DOCUMENTED THEIR COSMETICS API
 		}
 
 		// Global BTTV emotes
