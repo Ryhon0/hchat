@@ -111,7 +111,10 @@ class HChat {
 	 * @type { Function[] }
 	 */
 	badgePredictates = [];
+
 	globalTwitchBadges = {}
+	globalFFZBadgeOwners = {}
+	globalFFZBadges = {}
 
 	async init() {
 		// Emojis
@@ -155,26 +158,29 @@ class HChat {
 			}
 		}
 
-		this.globalTwitchBadges = parseTwitchBadges(await this.Twitch.getGlobalBadges());
+		// Twitch badge handling
+		{
+			this.globalTwitchBadges = parseTwitchBadges(await this.Twitch.getGlobalBadges());
 
-		/**
-		 * @param { Badge[] } list 
-		 * @param { Message } msg
-		 * @param { HChatChannel } hchannel
-		 * @returns { Badge[] }
-		 */
-		function getTwitchBadges(list, msg, hchannel) {
-			for (b of msg.tags.badges.split(',')) {
-				if (!b) continue;
+			/**
+			 * @param { Badge[] } list 
+			 * @param { Message } msg
+			 * @param { HChatChannel } hchannel
+			 * @returns { Badge[] }
+			 */
+			function getTwitchBadges(list, msg, hchannel) {
+				for (b of msg.tags.badges.split(',')) {
+					if (!b) continue;
 
-				if (b in hchannel.channelTwitchBadges)
-					list.push(hchannel.channelTwitchBadges[b]);
-				else if (b in hchannel.hchat.globalTwitchBadges)
-					list.push(hchannel.hchat.globalTwitchBadges[b]);
+					if (b in hchannel.channelTwitchBadges)
+						list.push(hchannel.channelTwitchBadges[b]);
+					else if (b in hchannel.hchat.globalTwitchBadges)
+						list.push(hchannel.hchat.globalTwitchBadges[b]);
+				}
+				return list;
 			}
-			return list;
+			this.badgePredictates.push(getTwitchBadges);
 		}
-		this.badgePredictates.push(getTwitchBadges);
 
 		// Generate TLDs
 		{
@@ -212,7 +218,6 @@ class HChat {
 
 		// Global BTTV emotes
 		{
-			// global emotes
 			try {
 				var set = await this.BTTV.getGlobalEmotes();
 				this.globalEmotes = { ...this.globalEmotes, ...this.processBTTVEmotes(set) };
@@ -234,6 +239,67 @@ class HChat {
 			catch (e) {
 				console.error("Failed to load global FFZ emotes");
 				console.error(e);
+			}
+
+			// Global badges
+			{
+				var br = await this.FFZ.getBadges();
+				for (var i in br.badges) {
+					var b = br.badges[i];
+
+					var bi = new Badge();
+					bi.id = b.name;
+					bi.title = b.title;
+					bi.backgroundStyle = b.color;
+					bi.img = b.urls["4"];
+					bi._replaces = b.replaces;
+
+					this.globalFFZBadges[b.id + ""] = bi;
+				}
+
+				this.globalFFZBadgeOwners = br.users;
+
+				/**
+				 * @param { Badge[] } list 
+				 * @param { Message } msg
+				 * @param { HChatChannel } hchannel
+				 * @returns { Badge[] }
+				 */
+				function getFFZBadges(list, msg, hchannel) {
+					var uname = msg.source.nick.toLowerCase();
+					var uid = Number(msg.tags["user-id"]);
+
+					var globalbot = false;
+					for (var i in hchannel.hchat.globalFFZBadgeOwners) {
+						if(i == 2 && hchannel.ffzBotBadgeOwnerIDs.indexOf(uid) != -1)
+							list.push(hchannel.hchat.globalFFZBadges[2]);
+						else if (hchannel.hchat.globalFFZBadgeOwners[i].indexOf(uname) != -1)
+						{
+							list.push(hchannel.hchat.globalFFZBadges[i]);
+						}
+					}
+
+					if (hchannel.ffzVIPBadge) {
+						for (var i in list) {
+							if (list[i].id.startsWith("vip/") && list[i].provider == "twitch") {
+								list[i] = ffzVIPBadge;
+								break;
+							}
+						}
+					}
+					if (hchannel.ffzModBadge) {
+						for (var i in list) {
+							if (list[i].id.startsWith("moderator/") && list[i].provider == "twitch") {
+								console.log(list[i]);
+								list[i] = hchannel.ffzModBadge;
+								break;
+							}
+						}
+					}
+
+					return list;
+				};
+				this.badgePredictates.push(getFFZBadges);
 			}
 		}
 	}
@@ -318,8 +384,6 @@ class HChat {
 }
 
 class HChatChannel {
-	vipBadgeURL = "";
-	modBadgeURL = "";
 	botList = [];
 	channelEmotes = {};
 	channelTwitchBadges = {};
@@ -328,6 +392,10 @@ class HChatChannel {
 	 */
 	hchat;
 	channelId = 0;
+
+	ffzBotBadgeOwnerIDs = []
+	ffzVIPBadge;
+	ffzModBadge;
 
 	/**
 	 * @param { HChat } hchat 
@@ -376,10 +444,30 @@ class HChatChannel {
 					this.channelEmotes = { ...this.channelEmotes, ...this.hchat.processFFZSet(u.sets[k].emoticons) };
 				}
 
-				console.log(u.room);
+				if (u.room.vip_badge) {
+					var vipb = new Badge();
+					vipb.title = "VIP";
+					vipb.id = "vip";
+					vipb.provider = hchatEmoteProviderFFZ;
+					vipb.img = u.room.vip_badge["4"];
+					vipb._replaces = "vip";
 
-				this.vipBadgeURL = u.room.vip_badge["4"];
-				this.modBadgeURL = u.room.mod_urls["4"];
+					this.ffzVIPBadge = vipb;
+				}
+
+				if (u.room.mod_urls) {
+					var modb = new Badge();
+					modb.title = "Moderator";
+					modb.id = "moderator";
+					modb.provider = hchatEmoteProviderFFZ;
+					modb.img = u.room.mod_urls["4"];
+					modb.backgroundStyle = "#34AE0A";
+					modb._replaces = "moderator";
+
+					this.ffzModBadge = modb;
+				}
+
+				this.ffzBotBadgeOwnerIDs = u.room.user_badge_ids["2"];
 			}
 			catch (e) {
 				console.error("Failed to load FFZ emotes for channel " + this.channelId);

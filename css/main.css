@@ -111,8 +111,9 @@ button {
 
 .badges>img {
 	height: 1.5em;
-	padding-right: 8px;
+	margin-right: 8px;
 	vertical-align: bottom;
+	border-radius: 4px;
 }
 
 .emote {

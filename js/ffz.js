@@ -8,7 +8,7 @@ const FFZAPIGetYouTubeUserRoute = "user/yt/{0}"
 const FFZAPIGetFFZUserRoute = "user/_id/{0}"
 
 const FFZAPIGetEmoteRoute = "emote/{0}"
-const FFZAPIGetBadgesRoute = "_badges"
+const FFZAPIGetBadgesRoute = "badges"
 
 const FFZAPIGlobalEmoteSetID = "global";
 const FFZAPIGetEmoteSet = "set/{0}"

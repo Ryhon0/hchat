@@ -26,12 +26,8 @@ document.onkeydown = (ev) => {
 };
 
 var cachedUserColors = {}
-var emojis = {}
-var emojisByUni = {}
-var emojiKeys = []
 var textInput = null
 var emoteSuggestions = null
-var userCosmetics = {}
 /** @type { ChatClient } */
 var anonClient = null;
 /** @type { ChatClient } */
