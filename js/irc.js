@@ -1,18 +1,20 @@
 // https://dev.twitch.tv/docs/irc/example-parser/
 
-class Message
-{
-	tags = []
-	command = ""
+class Message {
+	tags = {}
+	command = { channel: "", command: "" }
 	source = ""
 	content = ""
 	time = 0
 
-	displayName()
-	{
-		if(this.tags && this.tags["display-name"] && this.tags["display-name"].length > 0)
+	displayName() {
+		if (this.tags && this.tags["display-name"] && this.tags["display-name"].length > 0)
 			return this.tags["display-name"];
-		else return user;
+		else return this.user;
+	}
+
+	username() {
+		return this.user ?? this.tags.login;
 	}
 }
 
@@ -37,7 +39,7 @@ function parseMessage(message) {
 	}
 
 	let endIdx = message.indexOf(':', idx);
-	if (-1 == endIdx || message[endIdx-1] != ' ') {
+	if (-1 == endIdx || message[endIdx - 1] != ' ') {
 		endIdx = message.lastIndexOf(' ');
 		if (-1 == endIdx)
 			endIdx = message.length;
@@ -59,7 +61,7 @@ function parseMessage(message) {
 
 		var src = parseSource(rawSourceComponent);
 		parsedMessage.source = src;
-		if(src && src.nick)
+		if (src && src.nick)
 			parsedMessage.user = src.nick;
 
 		parsedMessage.content = rawParametersComponent;
@@ -68,7 +70,7 @@ function parseMessage(message) {
 		}
 	}
 
-	if(parsedMessage.tags)
+	if (parsedMessage.tags)
 		parsedMessage.time = parseInt(parsedMessage.tags["tmi-sent-ts"]);
 
 	return parsedMessage;
@@ -102,10 +104,22 @@ function parseCommand(rawCommandComponent) {
 		case 'WHISPER':
 		case 'USERSTATE':
 		case 'ROOMSTATE':
-		case 'USERNOTICE':
 			parsedCommand = {
 				command: commandParts[0],
 				channel: commandParts[1]
+			}
+			break;
+		case 'USERNOTICE':
+			if (commandParts.length == 1) {
+				parsedCommand = {
+					command: commandParts[0],
+				}
+			}
+			else {
+				parsedCommand = {
+					command: commandParts[0],
+					channel: commandParts[1]
+				}
 			}
 			break;
 		case 'PING':
@@ -149,7 +163,7 @@ function parseCommand(rawCommandComponent) {
 			}
 			break;
 		default:
-			if(commandParts[0])
+			if (commandParts[0])
 				console.log(`\nUnexpected command: '${commandParts[0]}'\n`);
 			return null;
 	}
@@ -186,8 +200,7 @@ function parseParameters(rawParametersComponent, command) {
 	return command;
 }
 
-function escapeTagValue(str)
-{
+function escapeTagValue(str) {
 	return str
 		.replaceAll('\\:', ';')
 		.replaceAll('\\s', ' ')

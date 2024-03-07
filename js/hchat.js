@@ -301,7 +301,8 @@ class HChat {
 				 * @returns { Badge[] }
 				 */
 				function getFFZBadges(list, msg, hchannel) {
-					var uname = msg.user.toLowerCase();
+					console.log(msg);
+					var uname = msg.username().toLowerCase();
 					var uid = Number(msg.tags["user-id"]);
 
 					var globalbot = false;
@@ -316,7 +317,7 @@ class HChat {
 					if (hchannel.ffzVIPBadge) {
 						for (var i in list) {
 							if (list[i].id.startsWith("vip/") && list[i].provider == "twitch") {
-								list[i] = ffzVIPBadge;
+								list[i] = hchannel.ffzVIPBadge;
 								break;
 							}
 						}
@@ -703,7 +704,7 @@ class HChatChannel {
 	}
 
 	async getChannelCheermotes() {
-		this.channelCheerMotes = parseCheermotes(await this.Twitch.getCheermotes(this.channelId), true);
+		this.channelCheerMotes = parseCheermotes(await this.hchat.Twitch.getCheermotes(this.channelId), true);
 	}
 
 	isURL(text) {
