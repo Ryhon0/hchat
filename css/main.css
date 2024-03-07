@@ -19,6 +19,10 @@ body {
 	font-size: 24px;
 }
 
+.hidden {
+	display: none;
+}
+
 ::-webkit-scrollbar {
 	width: 18px;
 }
@@ -35,8 +39,29 @@ body {
 	background: #555;
 }
 
-.inputBar,
-.topbar {
+#channels {
+	display: flex;
+	width: 100%;
+	min-height: 3em;
+	height: 3em;
+	background-color: #222222;
+}
+
+#channels > *
+{
+	display: flex;
+	padding: 1em;
+	align-items: center;
+	background-color: #363636;
+	margin: 0.25em;
+}
+
+#channels > .active
+{
+	background-color: #2d4c21;
+}
+
+.inputBar {
 	display: flex;
 	gap: 0.25em;
 	width: 100%;
@@ -64,50 +89,54 @@ button {
 	cursor: pointer;
 }
 
-.tlbox {
+#tlbox {
 	flex-grow: 1;
 	overflow-y: auto;
 	display: flex;
 	flex-direction: column-reverse;
 }
 
-#timeline {
+.timeline {
 	word-wrap: break-word;
 }
 
-#timeline>li {
+.timeline>li {
 	padding: 0.2em 1em;
 	list-style-type: none;
 }
 
-#timeline>li a.link {
+.timeline>li a.link {
 	color: #3a3ae5;
 }
 
-#timeline>li {
+.timeline>li {
 	--bg-color: #333;
 	--bg-color-other: #222;
 	background-color: var(--bg-color);
 }
 
-#timeline>li:nth-child(2n) {
+.timeline>li:nth-child(2n) {
 	background-color: color-mix(in srgb, var(--bg-color), #000 10%)
 }
 
-#timeline>li.mentioned {
+.timeline>li.mentioned {
 	--bg-color: rgb(168 93 6);
 }
 
-#timeline>li.first {
+.timeline>li.first {
 	--bg-color: rgb(58, 128, 33);
 }
 
-#timeline>li.sub {
+.timeline>li.sub {
 	--bg-color: #9146FF;
 }
 
-#timeline>li.raid {
+.timeline>li.raid {
 	--bg-color: #e87044;
+}
+
+.timeline>li.redeem {
+	--bg-color: #4197cc;
 }
 
 .mention {

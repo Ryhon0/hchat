@@ -16,6 +16,16 @@ class Message {
 	username() {
 		return this.user ?? this.tags.login;
 	}
+
+	userId()
+	{
+		return Number(this.tags["user-id"]);
+	}
+
+	roomId()
+	{
+		return Number(this.tags["room-id"]);
+	}
 }
 
 function parseMessage(message) {

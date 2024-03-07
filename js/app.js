@@ -1,5 +1,5 @@
-const Channel = 76055616;
-const ChannelName = "CallMeCarsonLIVE".toLowerCase();
+// const ChannelID = 76055616;
+// const ChannelName = "CallMeCarsonLIVE".toLowerCase();
 const clientID = "atu01l1tzhhfpzobn87uwwllq5pt4e";
 
 function suggestEmotes(short) {
@@ -27,15 +27,14 @@ document.onkeydown = (ev) => {
 
 var cachedUserColors = {}
 var textInput = null
-var emoteSuggestions = null
 /** @type { ChatClient } */
 var anonClient = null;
 /** @type { ChatClient } */
 var chatWS = null;
-var tl;
 
 var hchat = new HChat();
-var hchannel = new HChatChannel(hchat, Channel);
+var tlbox;
+var channelList;
 
 async function loaded() {
 	// OAuth redirect handling
@@ -64,12 +63,15 @@ async function loaded() {
 		}
 	}
 
-	await hchat.init();
-	await hchannel.init();
-
 	textInput = document.getElementById("textInput");
-	emoteSuggestions = document.getElementById("emoteSuggestions");
-	tl = document.getElementById("timeline");
+	tlbox = document.getElementById("tlbox");
+	channelList = document.getElementById("channels");
+	document.getElementById("addChannelButton").onclick = async () => 
+	{
+		await openChannelTab(prompt('Channel name:'), undefined);
+	};
+
+	await hchat.init();
 
 	userCosmetics = await getJSON("/data/user_cosmetics.json")
 
@@ -77,7 +79,6 @@ async function loaded() {
 	anonClient.onMessage = (msg) => {
 		processMessage(msg);
 	};
-	anonClient.join(ChannelName);
 
 	var login = localStorage.getItem("login");
 	if (login) {
@@ -89,17 +90,13 @@ async function loaded() {
 		hchat.Twitch.token = login.token;
 
 		hchat.getGlobalCheermotes();
-		hchannel.getChannelCheermotes();
 	}
 
-	var msg = await new RecentMessagesAPI().getRecentMessages(ChannelName, 800);
-	if (!msg.erorr) {
-		for (var m of msg.messages) {
-			processMessage(parseMessage(m));
-		}
-	}
-	else {
-		tl.appendChild(document.createTextNode("Failed to load message history" + msg.erorr_code + " - " + msg.erorr));
+	var savedChannels = getSavedChannels();
+	for (var i in savedChannels) {
+		var chi = savedChannels[i];
+
+		await openChannelTab(chi.name, chi.id);
 	}
 }
 
@@ -109,6 +106,12 @@ async function loaded() {
 function processMessage(pm) {
 	if (!pm || !pm.command) return;
 	if (["PRIVMSG", "USERNOTICE"].indexOf(pm.command.command) == -1) return;
+
+	var channel = getChannelById(pm.roomId());
+	if (!channel) {
+		console.error("Recieved message in channel " + pm.roomId() + ", but no chat with this name was opened");
+		return;
+	}
 
 	var mi = document.createElement("li");
 	mi.classList.add("message");
@@ -122,14 +125,14 @@ function processMessage(pm) {
 			case "sub":
 				var subFrom = pm.tags["display-name"];
 				var subFromId = pm.tags["user-id"];
-				
+
 				console.log(pm);
 				{
 					var text = pm.tags["system-msg"];
 					var li = document.createElement("li");
 					li.classList.add("sub");
 					li.innerText = text;
-					tl.appendChild(li);
+					channel.timeline.appendChild(li);
 				}
 
 				if (pm.command.channel) {
@@ -147,7 +150,7 @@ function processMessage(pm) {
 					var li = document.createElement("li");
 					li.classList.add("raid");
 					li.innerText = text.replace("\n", "");
-					tl.appendChild(li);
+					channel.timeline.appendChild(li);
 				}
 				if (pm.command.channel) {
 					mi.classList.add("raid");
@@ -159,9 +162,12 @@ function processMessage(pm) {
 				console.log(pm);
 				return;
 		}
-		
-		console.log(pm);
 	}
+
+	if (pm.tags["custom-reward-id"] || pm.tags["msg-id"] == "highlighted-message")
+		mi.classList.add("redeem");
+
+	console.log(pm);
 
 	if (pm.content[pm.content.length - 1] == '\r')
 		pm.content = pm.content.substring(0, pm.content.length - 1);
@@ -188,7 +194,7 @@ function processMessage(pm) {
 		var bl = document.createElement("span");
 		bl.classList.add("badges");
 
-		var blist = hchannel.getBadgesForMessage(pm);
+		var blist = channel.hchannel.getBadgesForMessage(pm);
 		for (var ba of blist) {
 			var bi = document.createElement("img");
 			bi.src = ba.img;
@@ -221,7 +227,7 @@ function processMessage(pm) {
 	mi.appendChild(nameSpan);
 
 	var mentioned = false;
-	var comps = hchannel.foldMessageComponents(hchannel.parseMessageComponents(pm.content, pm));
+	var comps = channel.hchannel.foldMessageComponents(channel.hchannel.parseMessageComponents(pm.content, pm));
 	for (c of comps) {
 		if (c instanceof Emote) {
 			var info = c.info;
@@ -287,69 +293,7 @@ function processMessage(pm) {
 	if (mentioned)
 		mi.classList.add("mentioned")
 
-	tl.appendChild(mi);
-}
-
-function textInputChanged() {
-	var v = textInput.value;
-	var end = textInput.selectionStart;
-
-	var subsstr = v.substring(0, end)
-	var space = subsstr.lastIndexOf(' ');
-	var colon = subsstr.lastIndexOf(':');
-
-	var shouldSuggest = colon != -1 ? space < colon : false;
-	emoteSuggestions.innerHTML = "";
-	if (!shouldSuggest) return;
-	var code = v.substring(colon + 1, textInput.selectionStart);
-	if (code.length < 3) return;
-
-	var suggested = []
-	suggested = suggested.concat(
-		Object.values(emotes)
-			.filter((e) => e.getName().toLowerCase().includes(code))
-			.map((e) => { return { insert: e.getName(), html: '<img loading="lazy" height=32 src="' + e.urls[2] + '"> ' + e.getName() } }));
-	suggested = suggested.concat(
-		suggestEmotes(code)
-			.map((e) => { return { insert: e.uni, html: e.uni + " " + e.short } }))
-
-	for (var s of suggested) {
-		var b = document.createElement("button");
-		b.setAttribute("onclick", "insertText(\"" + s.insert + "\")")
-		b.innerHTML = s.html;
-		emoteSuggestions.appendChild(b);
-		emoteSuggestions.appendChild(document.createElement("br"));
-	}
-}
-
-function insertText(text) {
-	var v = textInput.value;
-	var subsstr = v.substring(0, textInput.selectionStart)
-	var space = subsstr.lastIndexOf(' ');
-	var colon = subsstr.lastIndexOf(':');
-	v = v.substring(0, colon);
-	v += text;
-	var cursorpos = v.length;
-	v += textInput.value.substring(textInput.selectionStart, textInput.value.length);
-
-	emoteSuggestions.innerHTML = "";
-
-	textInput.value = v;
-	textInput.focus();
-	textInput.selectionStart = cursorpos;
-	textInput.selectionEnd = cursorpos;
-}
-
-function textInputKey(ev) {
-	// Up / Down Arrow
-	if (ev.keyCode == 38 || ev.keyCode == 40) {
-		ev.preventDefault();
-	}
-	// Enter
-	if (ev.keyCode == 13) {
-		chatWS.sendMessage(ChannelName, textInput.value)
-		textInput.value = "";
-	}
+	channel.timeline.appendChild(mi);
 }
 
 function authRedirect() {
@@ -533,5 +477,139 @@ function testMessages() {
 
 	for (var i in samples) {
 		processMessage(parseMessage(samples[i]));
+	}
+}
+
+/**
+ * @type { Object.<Number, Channel> }
+ */
+var channels = [];
+var selectedChannel = null;
+class Channel {
+	/** @type { String } */
+	name;
+	/** @type { Number } */
+	id;
+	/** @type { Element } */
+	timeline;
+	/** @type { HChatChannel } */
+	hchannel;
+}
+
+/**
+ * @param { Number } id
+ * @returns { Channel | undefined }
+ */
+function getChannelById(id)
+{
+	for(var i in channels)
+	{
+		var ch = channels[i];
+
+		if(ch.id == id) return ch;
+	}
+
+	return undefined;
+}
+
+/**
+ * @param { String } name 
+ * @param { Number | undefined } id 
+ * @returns { Channel }
+ */
+async function openChannelTab(name, id = undefined) {
+	const ch = await openChannelChat(name, id);
+	channels.push(ch);
+
+	anonClient.join(ch.name.toLowerCase());
+	tlbox.appendChild(ch.timeline);
+
+	const tab = ch.timeline;
+	const button = document.createElement("div");
+	{
+		button.innerText = ch.name;
+		button.tab = tab;
+		button.onclick = () => { switchTab(tab); selectedChannel = ch; };
+		channelList.appendChild(button);
+
+		if(!selectedChannel)
+		{
+			switchTab(tab);
+			selectedChannel = ch;
+		}
+	}
+
+	ch.hchannel.init().then(async () => {
+		if (false)
+			await ch.hchannel.getChannelCheermotes();
+
+		var msg = await new RecentMessagesAPI().getRecentMessages(ch.name.toLowerCase(), 800);
+		if (!msg.erorr) {
+			for (var m of msg.messages) {
+				processMessage(parseMessage(m));
+			}
+		}
+		else {
+			ch.timeline.appendChild(document.createTextNode("Failed to load message history" + msg.erorr_code + " - " + msg.erorr));
+		}
+	});
+}
+
+function saveChannels()
+{
+	var dat = [];
+
+	for(var i in channels)
+	{
+		var c = channels[i];
+
+		var cdat = {
+			name: c.name,
+			id: c.id
+		};
+		dat.push(cdat);
+	}
+
+	localStorage.setItem("channels", JSON.stringify(dat));
+}
+
+function getSavedChannels()
+{
+	var dat = localStorage.getItem("channels");
+	if(!dat) return [];
+
+	dat = JSON.parse(dat);
+	return dat; 
+}
+
+async function openChannelChat(name, id = undefined) {
+	var ch = new Channel();
+	if (!id) {
+		var res = await hchat.Twitch.getUserByName(name);
+		var user = res[0];
+		name = user.displayName;
+		id = Number(user.id);
+	}
+	ch.name = name;
+	ch.id = id;
+	ch.timeline = document.createElement("div");
+	ch.timeline.classList.add("timeline");
+	ch.hchannel = new HChatChannel(hchat, ch.id);
+	return ch;
+}
+
+function switchTab(tab) {
+	selectedChannel = undefined;
+
+	for (var b of channelList.children) {
+		b.classList.remove("active");
+		if (b.tab == tab)
+			b.classList.add("active");
+	}
+
+	for (var t of tlbox.children) {
+		t.classList.add("hidden");
+		if (t == tab)
+			t.classList.remove("hidden");
 	}
 }

@@ -301,7 +301,6 @@ class HChat {
 				 * @returns { Badge[] }
 				 */
 				function getFFZBadges(list, msg, hchannel) {
-					console.log(msg);
 					var uname = msg.username().toLowerCase();
 					var uid = Number(msg.tags["user-id"]);
 
@@ -426,14 +425,14 @@ class HChatChannel {
 	botList = [];
 	channelEmotes = {};
 	channelTwitchBadges = {};
-	channelCheerMotes = {}
+	channelCheerMotes = {};
 	/**
 	 * @type { HChat }
 	 */
 	hchat;
 	channelId = 0;
 
-	ffzBotBadgeOwnerIDs = []
+	ffzBotBadgeOwnerIDs = [];
 	ffzVIPBadge;
 	ffzModBadge;
 
