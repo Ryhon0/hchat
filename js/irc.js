@@ -91,7 +91,7 @@ function parseTags(tags) {
 
 	parsedTags.forEach(tag => {
 		let parsedTag = tag.split('=');
-		let tagValue = escapeTagValue(parsedTag[1]);
+		var tagValue = unescapeTagValue(parsedTag[1]);
 
 		dictParsedTags[parsedTag[0]] = tagValue;
 	});
@@ -210,11 +210,40 @@ function parseParameters(rawParametersComponent, command) {
 	return command;
 }
 
-function escapeTagValue(str) {
+function unescapeTagValue(str) {
 	return str
-		.replaceAll('\\:', ';')
+		.replaceAll('\\'+':', ';')
 		.replaceAll('\\s', ' ')
 		.replaceAll('\\r', '\r')
 		.replaceAll('\\n', '\n')
 		.replaceAll('\\\\', '\\');
+}
+
+function escapeTag(str)
+{
+	return str
+		.replaceAll('\\', '\\\\')
+		.replaceAll(';', '\\'+':')
+		.replaceAll(' ', '\\s')
+		.replaceAll('\r', '\\r')
+		.replaceAll('\n', '\\n');
+}
+
+function tagsToString(tags)
+{
+	var s = "@";
+	var first = true;
+	for(var k in tags)
+	{
+		var v = tags[k];
+
+		if(first)
+			first = false;
+		else s += ";";
+
+		s += escapeTag(String(k));
+		s += "=";
+		s += escapeTag(String(v));
+	}
+	return s;
 }

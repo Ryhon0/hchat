@@ -2,35 +2,15 @@
 // const ChannelName = "CallMeCarsonLIVE".toLowerCase();
 const clientID = "atu01l1tzhhfpzobn87uwwllq5pt4e";
 
-function suggestEmotes(short) {
-	short = short.toLowerCase();
-
-	return emojiKeys.filter((e) => e.includes(short)).map((e) => {
-		return {
-			short: e,
-			uni: emojis[e]
-		}
-	})
-}
-
-document.addEventListener("selectionchange", () => {
-	if (textInput && textInput == document.activeElement) {
-		textInputChanged();
-	}
-});
-
-document.onkeydown = (ev) => {
-	if (textInput && textInput == document.activeElement) {
-		textInputKey(ev);
-	}
-};
-
 var cachedUserColors = {}
-var textInput = null
+
+var sendButton;
+var textInput;
+
 /** @type { ChatClient } */
-var anonClient = null;
+var anonClient;
 /** @type { ChatClient } */
-var chatWS = null;
+var chatWS;
 
 var hchat = new HChat();
 var tlbox;
@@ -64,13 +44,52 @@ async function loaded() {
 	}
 
 	textInput = document.getElementById("textInput");
+	sendButton = document.getElementById("sendButton");
 	tlbox = document.getElementById("tlbox");
 	channelList = document.getElementById("channels");
-	document.getElementById("addChannelButton").onclick = async () => 
-	{
-		await openChannelTab(prompt('Channel name:'), undefined);
+	document.getElementById("addChannelButton").onclick = async () => {
+		var name = prompt('Channel name:');
+		if(name)
+		{
+			await openChannelTab(name, undefined);
+			saveChannels();
+		}
 	};
 
+	textInput.addEventListener("keydown", (ev) => {
+		if (ev.keyCode == 13) {
+			var text = textInput.value;
+			sendMessage(text);
+
+			if (!ev.ctrlKey) {
+				textInput.value = "";
+			}
+		}
+	});
+
+	sendButton.addEventListener("click", (ev) =>
+	{
+		var text = textInput.value;
+		sendMessage(text);
+		textInput.value = "";
+	});
+
+	// HChat buttons
+	{
+		var hchatBadge = new Badge();
+		hchatBadge.id = "hchat";
+		hchatBadge.description = "This message was sent using HChat";
+		hchatBadge.img = "/icon.png";
+		function getHChatBadges(list, msg, hchannel) {
+			var uid = Number(msg.tags["user-id"]);
+
+			if (msg.tags["client-nonce"] && msg.tags["client-nonce"].startsWith("hchat,"))
+				list.push(hchatBadge);
+
+			return list;
+		};
+		hchat.badgePredictates.push(getHChatBadges);
+	}
 	await hchat.init();
 
 	userCosmetics = await getJSON("/data/user_cosmetics.json")
@@ -126,7 +145,6 @@ function processMessage(pm) {
 				var subFrom = pm.tags["display-name"];
 				var subFromId = pm.tags["user-id"];
 
-				console.log(pm);
 				{
 					var text = pm.tags["system-msg"];
 					var li = document.createElement("li");
@@ -166,8 +184,6 @@ function processMessage(pm) {
 
 	if (pm.tags["custom-reward-id"] || pm.tags["msg-id"] == "highlighted-message")
 		mi.classList.add("redeem");
-
-	console.log(pm);
 
 	if (pm.content[pm.content.length - 1] == '\r')
 		pm.content = pm.content.substring(0, pm.content.length - 1);
@@ -376,8 +392,8 @@ class ChatClient {
 		this.send("PART #" + chanel.toLowerCase());
 	}
 
-	sendMessage(channel, message) {
-		this.send("PRIVMSG #" + channel.toLowerCase() + " :" + message);
+	sendMessage(tags, channel, message) {
+		this.send(tagsToString(tags) + " PRIVMSG #" + channel.toLowerCase() + " :" + message);
 	}
 }
 
@@ -484,6 +500,7 @@ function testMessages() {
  * @type { Object.<Number, Channel> }
  */
 var channels = [];
+/** @type { Channel } */
 var selectedChannel = null;
 class Channel {
 	/** @type { String } */
@@ -500,13 +517,11 @@ class Channel {
  * @param { Number } id
  * @returns { Channel | undefined }
  */
-function getChannelById(id)
-{
-	for(var i in channels)
-	{
+function getChannelById(id) {
+	for (var i in channels) {
 		var ch = channels[i];
 
-		if(ch.id == id) return ch;
+		if (ch.id == id) return ch;
 	}
 
 	return undefined;
@@ -532,8 +547,7 @@ async function openChannelTab(name, id = undefined) {
 		button.onclick = () => { switchTab(tab); selectedChannel = ch; };
 		channelList.appendChild(button);
 
-		if(!selectedChannel)
-		{
+		if (!selectedChannel) {
 			switchTab(tab);
 			selectedChannel = ch;
 		}
@@ -555,12 +569,10 @@ async function openChannelTab(name, id = undefined) {
 	});
 }
 
-function saveChannels()
-{
+function saveChannels() {
 	var dat = [];
 
-	for(var i in channels)
-	{
+	for (var i in channels) {
 		var c = channels[i];
 
 		var cdat = {
@@ -573,13 +585,12 @@ function saveChannels()
 	localStorage.setItem("channels", JSON.stringify(dat));
 }
 
-function getSavedChannels()
-{
+function getSavedChannels() {
 	var dat = localStorage.getItem("channels");
-	if(!dat) return [];
+	if (!dat) return [];
 
 	dat = JSON.parse(dat);
-	return dat; 
+	return dat;
 }
 
 async function openChannelChat(name, id = undefined) {
@@ -612,4 +623,15 @@ function switchTab(tab) {
 		if (t == tab)
 			t.classList.remove("hidden");
 	}
+}
+
+var lastMessage = "";
+function sendMessage(msg) {
+	var ch = selectedChannel.name;
+
+	if (msg == lastMessage)
+		msg += "​";
+
+	chatWS.sendMessage({ "client-nonce": "hchat," }, ch, msg);
+	lastMessage = msg;
 }

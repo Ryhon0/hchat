@@ -506,7 +506,7 @@ class HChatChannel {
 					this.ffzModBadge = modb;
 				}
 
-				this.ffzBotBadgeOwnerIDs = u.room.user_badge_ids["2"];
+				this.ffzBotBadgeOwnerIDs = u.room.user_badge_ids["2"] ?? [];
 			}
 			catch (e) {
 				console.error("Failed to load FFZ emotes for channel " + this.channelId);
