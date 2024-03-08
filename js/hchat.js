@@ -72,7 +72,7 @@ class CheerMote {
 
 // Make a GET request asyncronously and return a JSON
 async function getJSON(url, opts = { timeout: 5000 }) {
-	return await (await fetch(url, opts)).json()
+	return await (await fetch(url, opts)).json();
 }
 
 class Badge {

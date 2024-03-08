@@ -9,37 +9,84 @@ var textInput;
 
 /** @type { ChatClient } */
 var anonClient;
-/** @type { ChatClient } */
-var chatWS;
 
 var hchat = new HChat();
 var tlbox;
 var channelList;
 
 async function loaded() {
+	accounts = loadSavedAccounts();
+	activeAccount = accounts[0];
+
 	// OAuth redirect handling
 	{
 		var atoken = new URLSearchParams(window.location.hash.substring(1)).get("access_token");
+		window.location.hash = "";
 		if (atoken) {
-			var r = await getJSON("https://id.twitch.tv/oauth2/validate", {
-				headers: {
-					"Authorization": "Bearer " + atoken
-				}
-			});
-			if (r.login) {
-				var login =
+			var t = new TwitchAPI();
+			t.token = atoken;
+			t.clientID = clientID;
+			var r = await t.validateToken();
+			
+			if (r.user_id) {
+				var id = r.user_id;
+				var acc = getAccountById(id);
+				
+				if(acc == null)
 				{
-					username: r.login,
-					id: r.user_id,
-					token: atoken
-				};
+					acc = new Account();
+					acc.name = r.login;
+					acc.type = "bearer";
+					acc.id = id;
 
-				localStorage.setItem("login", JSON.stringify(login));
+					var ui = await t.getThisUser();
+
+					acc.name = ui.display_name;
+					acc.avatarUrl = ui.profile_image_url;
+
+					accounts.push(acc);
+				}
+
+				acc.token = atoken;
+				acc.state = AccountStateReady;
+
+				saveAccounts();
 			}
-			else {
-				localStorage.removeItem("login");
+			else
+			{
+				console.error("Failed to validate token");
+				console.error(r);
 			}
-			window.location.hash = "";
+		}
+	}
+
+	// Verify accounts
+	{
+		for(var i in accounts)
+		{
+			const acc = accounts[i];
+
+			if(acc.state != AccountStateChecking) continue;
+
+			const t = new TwitchAPI();
+			t.clientID = clientID;
+			t.token = acc.token;
+
+			t.validateToken().then(async (r) => 
+			{
+				if(r.login)
+				{
+					var u = await t.getThisUser().then((u) => {
+						acc.name = u.display_name;
+						acc.avatarUrl = u.profile_image_url;
+						saveAccounts();
+					});
+					acc.irc = new ChatClient(acc.name.toLowerCase(), acc.token);
+					acc.irc.onMessage = (msg) => { };
+					t.state = AccountStateReady;
+				}
+				else t.state = AccountStateExpired;
+			});
 		}
 	}
 
@@ -102,8 +149,6 @@ async function loaded() {
 	var login = localStorage.getItem("login");
 	if (login) {
 		login = JSON.parse(login);
-		chatWS = new ChatClient(login.username, login.token);
-		chatWS.onMessage = (msg) => { };
 
 		hchat.Twitch.clientID = clientID;
 		hchat.Twitch.token = login.token;
@@ -280,8 +325,8 @@ function processMessage(pm) {
 			s.style.color = cachedUserColors[c.username.toLowerCase()];
 			mi.appendChild(s);
 
-			if (c.username.toLowerCase() == chatWS.username)
-				mentioned = true;
+			// if (c.username.toLowerCase() == chatWS.username)
+			// 	mentioned = true;
 		}
 		else if (c instanceof CheerMote) {
 			var s = document.createElement("span");
@@ -537,6 +582,7 @@ async function openChannelTab(name, id = undefined) {
 	channels.push(ch);
 
 	anonClient.join(ch.name.toLowerCase());
+	ch.timeline.classList.add("hidden");
 	tlbox.appendChild(ch.timeline);
 
 	const tab = ch.timeline;
@@ -625,13 +671,95 @@ function switchTab(tab) {
 	}
 }
 
-var lastMessage = "";
 function sendMessage(msg) {
 	var ch = selectedChannel.name;
 
-	if (msg == lastMessage)
-		msg += "​";
+	activeAccount.irc.sendMessage({ "client-nonce": "hchat," }, ch, msg);
+}
 
-	chatWS.sendMessage({ "client-nonce": "hchat," }, ch, msg);
-	lastMessage = msg;
+const AccountStateChecking = 0;
+const AccountStateExpired = -1;
+const AccountStateReady = 1;
+class Account
+{
+	/** @type { String } */
+	name
+	/** @type { String } */
+	id
+	/** @type { String } */
+	avatarUrl
+	/** @type { String } */
+	token
+	/** @type { String } */
+	type
+
+	/** @type { Number } */
+	state = AccountStateChecking
+	/** @type { ChatClient } */
+	irc
+}
+/** @type { Account } */
+var activeAccount;
+/** @type { Account[] } */
+var accounts = [];
+
+/**
+ * @param { Number } id
+ * @returns { Account | undefined }
+ */
+function getAccountById(id) {
+	for (var i in accounts) {
+		var a = accounts[i];
+
+		if (a.id == id) return a;
+	}
+
+	return null;
+}
+
+function loadSavedAccounts()
+{
+	var accs = [];
+
+	var accjson = localStorage.getItem("accounts");
+	if(!accjson) return accs;
+
+	accjson = JSON.parse(accjson);
+	
+	for(var i in accjson)
+	{
+		var aj = accjson[i];
+		
+		var a = new Account();
+		a.id = aj.id;
+		a.name = aj.name;
+		a.token = aj.token;
+		a.avatarUrl = aj.avatarUrl;
+		a.type = aj.type;
+		
+		accs.push(a);
+	}
+
+	return accs;
+}
+
+function saveAccounts()
+{
+	var dat = [];
+
+	for(var i in accounts)
+	{
+		var a = accounts[i];
+		
+		var aj = {};
+		aj.id = a.id;
+		aj.name = a.name;
+		aj.token = a.token;
+		aj.avatarUrl = a.avatarUrl;
+		aj.type = a.type;
+		
+		dat.push(aj);
+	}
+
+	localStorage.setItem("accounts", JSON.stringify(dat));
 }

@@ -15,6 +15,18 @@ class TwitchAPI {
 		return !this.token;
 	}
 
+	async getThisUser() {
+		return (await this.getJSONAuthenticated(this.BaseHelixURL + "/users")).data[0];
+	}
+
+	async validateToken() {
+		return await getJSON("https://id.twitch.tv/oauth2/validate", {
+			headers: {
+				"Authorization": "Bearer " + this.token
+			}
+		});
+	}
+
 	async getUserByName(username) {
 		return await getJSON(this.BaseIVRURL + "/v2/twitch/user?login=" + username);
 	}
