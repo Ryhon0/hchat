@@ -7,6 +7,7 @@
 	<link rel="manifest" href="data/manifest.json" />
 
 	<link rel="stylesheet" href="css/main.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
 
 	<script src="js/hchat.js"></script>
 	<script src="js/seventv.js"></script>
@@ -39,8 +40,15 @@
 </head>
 
 <body onload="loaded()">
-	<div id="channels">
-		<button id="addChannelButton">+</button>
+	<div id="topBar">
+		<button class="bi-plus square" id="addChannelButton"></button>
+		<div id="channelList">
+
+		</div>
+		<button class="bi-person square" id="accountButton">
+			<img id="currentAccountAvatar">
+		</button>
+		<button class="bi-gear-fill square" id="settingsButton"></button>
 	</div>
 
 	<div id="tlbox">
@@ -48,10 +56,8 @@
 	</div>
 
 	<div class="inputBar">
-		<button onclick="authRedirect()">Log</button>
-		<button>😃</button>
 		<input id="textInput" type="text" />
-		<button id="sendButton">➤</button>
+		<button class="square" id="sendButton">➤</button>
 	</div>
 	<div id="emoteSuggestions">
 	</div>

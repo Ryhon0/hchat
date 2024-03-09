@@ -13,6 +13,8 @@ var anonClient;
 var hchat = new HChat();
 var tlbox;
 var channelList;
+var accountButton;
+var currentAccountAvatar;
 
 async function loaded() {
 	accounts = loadSavedAccounts();
@@ -27,13 +29,12 @@ async function loaded() {
 			t.token = atoken;
 			t.clientID = clientID;
 			var r = await t.validateToken();
-			
+
 			if (r.user_id) {
 				var id = r.user_id;
 				var acc = getAccountById(id);
-				
-				if(acc == null)
-				{
+
+				if (acc == null) {
 					acc = new Account();
 					acc.name = r.login;
 					acc.type = "bearer";
@@ -52,8 +53,7 @@ async function loaded() {
 
 				saveAccounts();
 			}
-			else
-			{
+			else {
 				console.error("Failed to validate token");
 				console.error(r);
 			}
@@ -62,21 +62,18 @@ async function loaded() {
 
 	// Verify accounts
 	{
-		for(var i in accounts)
-		{
+		for (var i in accounts) {
 			const acc = accounts[i];
 
-			if(acc.state != AccountStateChecking) continue;
+			if (acc.state != AccountStateChecking) continue;
 
 			const t = new TwitchAPI();
 			t.clientID = clientID;
 			t.token = acc.token;
 
-			t.validateToken().then(async (r) => 
-			{
-				if(r.login)
-				{
-					var u = await t.getThisUser().then((u) => {
+			t.validateToken().then(async (r) => {
+				if (r.login) {
+					t.getThisUser().then((u) => {
 						acc.name = u.display_name;
 						acc.avatarUrl = u.profile_image_url;
 						saveAccounts();
@@ -93,15 +90,80 @@ async function loaded() {
 	textInput = document.getElementById("textInput");
 	sendButton = document.getElementById("sendButton");
 	tlbox = document.getElementById("tlbox");
-	channelList = document.getElementById("channels");
+	channelList = document.getElementById("channelList");
 	document.getElementById("addChannelButton").onclick = async () => {
 		var name = prompt('Channel name:');
-		if(name)
-		{
+		if (name) {
 			await openChannelTab(name, undefined);
 			saveChannels();
 		}
 	};
+	accountButton = document.getElementById("accountButton");
+	accountButton.onclick = (ev) => {
+		const popup = document.createElement("div");
+		popup.classList.add("popupMenu");
+		popup.style.width = "400px";
+		document.body.appendChild(popup);
+
+		setInterval(() => {
+			document.addEventListener("click", (ev) => {
+				popup.remove();
+			});
+		}, 0);
+
+		for (var a of accounts) {
+			const ab = document.createElement("button");
+			ab.innerText = a.name;
+			if (a.state == AccountStateExpired)
+				ab.innerText += " (Expired)";
+
+			if (activeAccount == a)
+				ab.innerText += " (Active)";
+
+			ab.onclick = () => {
+				activeAccount = a;
+				onAccountChanged();
+			}
+
+			const av = document.createElement("img");
+			av.style.maxWidth = "1em";
+			av.style.height = "1em";
+			av.src = a.avatarUrl;
+			ab.appendChild(av);
+
+			popup.appendChild(ab);
+		}
+
+		{
+			var ab = document.createElement("button");
+			ab.classList.add("bi-plus");
+			ab.innerText = "Log in";
+			ab.onclick = () => {
+				activeAccount = a;
+				onAccountChanged();
+			}
+
+			popup.appendChild(ab);
+		}
+
+		var winW = document.documentElement.clientWidth;
+		var winH = document.documentElement.clientHeight;
+
+		var boxX = ev.x;
+		var boxY = ev.y;
+
+		var boxW = popup.getBoundingClientRect().width;
+
+		if (boxX + boxW > winW)
+			boxX = winW - boxW;
+
+		popup.style.top = boxY + "px";
+		popup.style.left = boxX + "px";
+		// authRedirect()
+	}
+	currentAccountAvatar = document.getElementById("currentAccountAvatar");
+
+	onAccountChanged();
 
 	textInput.addEventListener("keydown", (ev) => {
 		if (ev.keyCode == 13) {
@@ -114,8 +176,7 @@ async function loaded() {
 		}
 	});
 
-	sendButton.addEventListener("click", (ev) =>
-	{
+	sendButton.addEventListener("click", (ev) => {
 		var text = textInput.value;
 		sendMessage(text);
 		textInput.value = "";
@@ -139,8 +200,6 @@ async function loaded() {
 	}
 	await hchat.init();
 
-	userCosmetics = await getJSON("/data/user_cosmetics.json")
-
 	anonClient = new ChatClient();
 	anonClient.onMessage = (msg) => {
 		processMessage(msg);
@@ -153,14 +212,14 @@ async function loaded() {
 		hchat.Twitch.clientID = clientID;
 		hchat.Twitch.token = login.token;
 
-		hchat.getGlobalCheermotes();
+		hchat.getGlobalCheermotes().then(() => { });
 	}
 
 	var savedChannels = getSavedChannels();
 	for (var i in savedChannels) {
 		var chi = savedChannels[i];
 
-		await openChannelTab(chi.name, chi.id);
+		openChannelTab(chi.name, chi.id).then(() => { });
 	}
 }
 
@@ -249,7 +308,6 @@ function processMessage(pm) {
 		pm.content = pm.content.substring("ACTION".length, pm.content.length - 1);
 	}
 
-	var cosmetics = {};
 	// Badges
 	{
 		var bl = document.createElement("span");
@@ -274,17 +332,6 @@ function processMessage(pm) {
 		nameSpan.innerText += ": ";
 	if (namecolor)
 		nameSpan.style.color = namecolor;
-	if (cosmetics) {
-		if (cosmetics["name-background"]) {
-			nameSpan.style.background = cosmetics["name-background"];
-			nameSpan.style.setProperty("-webkit-background-clip", "text");
-			nameSpan.style.setProperty("-webkit-text-fill-color", "transparent");
-		}
-
-		if (cosmetics["name-filter"]) {
-			nameSpan.style.filter = cosmetics["name-filter"];
-		}
-	}
 	mi.appendChild(nameSpan);
 
 	var mentioned = false;
@@ -429,12 +476,12 @@ class ChatClient {
 		else this.pending.push(msg);
 	}
 
-	join(chanel) {
-		this.send("JOIN #" + chanel.toLowerCase());
+	join(channel) {
+		this.send("JOIN #" + channel.toLowerCase());
 	}
 
 	part(channel) {
-		this.send("PART #" + chanel.toLowerCase());
+		this.send("PART #" + channel.toLowerCase());
 	}
 
 	sendMessage(tags, channel, message) {
@@ -542,7 +589,7 @@ function testMessages() {
 }
 
 /**
- * @type { Object.<Number, Channel> }
+ * @type { Channel[] }
  */
 var channels = [];
 /** @type { Channel } */
@@ -556,6 +603,10 @@ class Channel {
 	timeline;
 	/** @type { HChatChannel } */
 	hchannel;
+
+	close() {
+		anonClient.part(this.name.toLowerCase());
+	}
 }
 
 /**
@@ -585,23 +636,30 @@ async function openChannelTab(name, id = undefined) {
 	ch.timeline.classList.add("hidden");
 	tlbox.appendChild(ch.timeline);
 
-	const tab = ch.timeline;
-	const button = document.createElement("div");
+	const page = ch.timeline;
+	const tab = document.createElement("button");
+	page.tab = tab;
+	tab.page = page;
+
 	{
-		button.innerText = ch.name;
-		button.tab = tab;
-		button.onclick = () => { switchTab(tab); selectedChannel = ch; };
-		channelList.appendChild(button);
+		tab.innerText = ch.name;
+		tab.onclick = () => { switchTab(ch.timeline); selectedChannel = ch; };
+
+		const closeButton = document.createElement("button");
+		closeButton.classList.add("closeButton");
+		closeButton.classList.add("bs-x");
+		closeButton.onclick = () => { closeChannelTab(ch); };
+		tab.appendChild(closeButton);
+
+		channelList.appendChild(tab);
 
 		if (!selectedChannel) {
-			switchTab(tab);
-			selectedChannel = ch;
+			tab.click();
 		}
 	}
 
 	ch.hchannel.init().then(async () => {
-		if (false)
-			await ch.hchannel.getChannelCheermotes();
+		ch.hchannel.getChannelCheermotes().then(() => { });
 
 		var msg = await new RecentMessagesAPI().getRecentMessages(ch.name.toLowerCase(), 800);
 		if (!msg.erorr) {
@@ -613,6 +671,29 @@ async function openChannelTab(name, id = undefined) {
 			ch.timeline.appendChild(document.createTextNode("Failed to load message history" + msg.erorr_code + " - " + msg.erorr));
 		}
 	});
+}
+
+function closeChannelTab(ch) {
+	if (!ch) return;
+
+	var tab = ch.timeline.tab;
+	var page = ch.timeline;
+
+	tab.remove();
+	page.remove();
+	ch.close();
+
+	channels = channels.filter((v) => v != ch);
+	saveChannels();
+
+	const newch = channels[0];
+	if (newch) {
+		// For some dumb reason this wouldn't work without the timeout
+		setTimeout(() => {
+			switchTab(newch.timeline);
+			selectedChannel = newch;
+		}, 0);
+	}
 }
 
 function saveChannels() {
@@ -655,19 +736,19 @@ async function openChannelChat(name, id = undefined) {
 	return ch;
 }
 
-function switchTab(tab) {
+function switchTab(page) {
 	selectedChannel = undefined;
 
 	for (var b of channelList.children) {
 		b.classList.remove("active");
-		if (b.tab == tab)
+		if (b.page == page)
 			b.classList.add("active");
 	}
 
-	for (var t of tlbox.children) {
-		t.classList.add("hidden");
-		if (t == tab)
-			t.classList.remove("hidden");
+	for (var p of tlbox.children) {
+		p.classList.add("hidden");
+		if (p == page)
+			p.classList.remove("hidden");
 	}
 }
 
@@ -680,8 +761,7 @@ function sendMessage(msg) {
 const AccountStateChecking = 0;
 const AccountStateExpired = -1;
 const AccountStateReady = 1;
-class Account
-{
+class Account {
 	/** @type { String } */
 	name
 	/** @type { String } */
@@ -717,49 +797,70 @@ function getAccountById(id) {
 	return null;
 }
 
-function loadSavedAccounts()
-{
+function loadSavedAccounts() {
 	var accs = [];
 
 	var accjson = localStorage.getItem("accounts");
-	if(!accjson) return accs;
+	if (!accjson) return accs;
 
 	accjson = JSON.parse(accjson);
-	
-	for(var i in accjson)
-	{
+
+	for (var i in accjson) {
 		var aj = accjson[i];
-		
+
 		var a = new Account();
 		a.id = aj.id;
 		a.name = aj.name;
 		a.token = aj.token;
 		a.avatarUrl = aj.avatarUrl;
 		a.type = aj.type;
-		
+
 		accs.push(a);
 	}
 
 	return accs;
 }
 
-function saveAccounts()
-{
+function saveAccounts() {
 	var dat = [];
 
-	for(var i in accounts)
-	{
+	for (var i in accounts) {
 		var a = accounts[i];
-		
+
 		var aj = {};
 		aj.id = a.id;
 		aj.name = a.name;
 		aj.token = a.token;
 		aj.avatarUrl = a.avatarUrl;
 		aj.type = a.type;
-		
+
 		dat.push(aj);
 	}
 
 	localStorage.setItem("accounts", JSON.stringify(dat));
+}
+
+function onAccountChanged() {
+	if (activeAccount) {
+		if(activeAccount.state == AccountStateExpired)
+		{
+			textInput.disabled = false;
+			textInput.placeholder = "Login for @" + activeAccount.name + " has expired. Please log in again.";
+		}
+		else
+		{
+			textInput.disabled = false;
+			textInput.placeholder = "Send message as @" + activeAccount.name + "...";
+		}
+
+		{
+			accountButton.classList.remove("bi-person");
+			currentAccountAvatar.src = activeAccount.avatarUrl;
+		}
+	}
+	else {
+		textInput.disabled = true;
+		textInput.placeholder = "You need to log in to send messages.";
+		accountButton.classList.add("bi-person");
+	}
 }

@@ -13,10 +13,13 @@ body {
 	display: flex;
 	flex-direction: column;
 	background-color: #333;
-	color: #efefef;
 
-	font-family: FreeSans, Twemoji, Sans;
+	font-family: FreeSans, Sans;
 	font-size: 24px;
+}
+
+* {
+	color: #efefef;
 }
 
 .hidden {
@@ -39,7 +42,7 @@ body {
 	background: #555;
 }
 
-#channels {
+#topBar {
 	display: flex;
 	width: 100%;
 	min-height: 3em;
@@ -47,24 +50,48 @@ body {
 	background-color: #222222;
 }
 
-#channels > *
+#channelList{
+	flex-grow: 1;
+	overflow-x: auto;
+	overflow-y: hidden;
+	display: flex;
+	scrollbar-width: none;
+}
+
+#channelList > *
 {
 	display: flex;
 	padding: 1em;
 	align-items: center;
 	background-color: #363636;
 	margin: 0.25em;
+	gap: 0.5em;
 }
 
-#channels > .active
+#channelList > .active
 {
 	background-color: #2d4c21;
 }
+
+#channelList > * > .closeButton
+{
+	display: none;
+}
+
+#channelList > .active > .closeButton
+{
+	display: block;
+	background-color: #1c1c1c;
+	width: 1em;
+	height: 1em;
+}
+
 
 .inputBar {
 	display: flex;
 	gap: 0.25em;
 	width: 100%;
+	min-height: 3em;
 	height: 3em;
 	background-color: #222222;
 	padding: 0.25em;
@@ -84,9 +111,13 @@ button {
 	background-color: #383838;
 	border: none;
 	border-radius: 8px;
-	aspect-ratio: 1;
 	font-size: 1.25em;
 	cursor: pointer;
+}
+
+.square 
+{
+	aspect-ratio: 1;
 }
 
 #tlbox {
@@ -173,4 +204,18 @@ button {
 #emoteSuggestions {
 	position: absolute;
 	top: 0px;
+}
+
+.popupMenu
+{
+	background: #222;
+	display: flex;
+	flex-direction: column;
+	position: absolute;
+}
+
+#currentAccountAvatar
+{
+	max-width: 1.25em;
+	height: 1.25em;
 }
