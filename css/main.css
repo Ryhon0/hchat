@@ -80,10 +80,12 @@ body {
 
 #channelList > .active > .closeButton
 {
+	font-size: 0.65em;
+	text-align: center;
 	display: block;
 	background-color: #1c1c1c;
-	width: 1em;
-	height: 1em;
+	width: 2em;
+	height: 2em;
 }
 
 

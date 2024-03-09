@@ -637,7 +637,7 @@ async function openChannelTab(name, id = undefined) {
 
 		const closeButton = document.createElement("button");
 		closeButton.classList.add("closeButton");
-		closeButton.classList.add("bs-x");
+		closeButton.classList.add("bi-x-lg");
 		closeButton.onclick = () => { closeChannelTab(ch); };
 		tab.appendChild(closeButton);
 
@@ -676,14 +676,18 @@ function closeChannelTab(ch) {
 	channels = channels.filter((v) => v != ch);
 	saveChannels();
 
-	const newch = channels[0];
-	if (newch) {
-		// For some dumb reason this wouldn't work without the timeout
-		setTimeout(() => {
-			switchTab(newch.timeline);
-			selectedChannel = newch;
-		}, 0);
-	}
+	setTimeout(() => {
+		if (selectedChannel == ch) {
+			selectedChannel = undefined;
+
+			const newch = channels[0];
+			if (newch) {
+				// For some dumb reason this wouldn't work without the timeout
+				switchTab(selectedChannel.timeline);
+				selectedChannel = newch;
+			}
+		}
+	}, 0);
 }
 
 function saveChannels() {
@@ -729,8 +733,7 @@ async function openChannelChat(name, id = undefined) {
 function switchTab(page) {
 	selectedChannel = undefined;
 
-	if(tlbox.children.length == 1)
-	{
+	if (tlbox.children.length == 1) {
 		tlbox.children[0].classList.remove("hidden");
 		return;
 	}
@@ -838,13 +841,11 @@ function saveAccounts() {
 
 function onAccountChanged() {
 	if (activeAccount) {
-		if(activeAccount.state == AccountStateExpired)
-		{
+		if (activeAccount.state == AccountStateExpired) {
 			textInput.disabled = false;
 			textInput.placeholder = "Login for @" + activeAccount.name + " has expired. Please log in again.";
 		}
-		else
-		{
+		else {
 			textInput.disabled = false;
 			textInput.placeholder = "Send message as @" + activeAccount.name + "...";
 		}
