@@ -18,12 +18,11 @@ var currentAccountAvatar;
 
 async function loaded() {
 	accounts = loadSavedAccounts();
-	activeAccount = accounts[0];
 
 	// OAuth redirect handling
 	{
 		var atoken = new URLSearchParams(window.location.hash.substring(1)).get("access_token");
-		window.location.hash = "";
+		history.pushState("", document.title, window.location.pathname + window.location.search);
 		if (atoken) {
 			var t = new TwitchAPI();
 			t.token = atoken;
@@ -59,6 +58,7 @@ async function loaded() {
 			}
 		}
 	}
+	activeAccount = accounts[0];
 
 	// Verify accounts
 	{
@@ -139,27 +139,17 @@ async function loaded() {
 			ab.classList.add("bi-plus");
 			ab.innerText = "Log in";
 			ab.onclick = () => {
-				activeAccount = a;
-				onAccountChanged();
+				authRedirect();
 			}
 
 			popup.appendChild(ab);
 		}
 
-		var winW = document.documentElement.clientWidth;
-		var winH = document.documentElement.clientHeight;
+		var btnRect = accountButton.getBoundingClientRect();
+		var popupRect = popup.getBoundingClientRect();
 
-		var boxX = ev.x;
-		var boxY = ev.y;
-
-		var boxW = popup.getBoundingClientRect().width;
-
-		if (boxX + boxW > winW)
-			boxX = winW - boxW;
-
-		popup.style.top = boxY + "px";
-		popup.style.left = boxX + "px";
-		// authRedirect()
+		popup.style.top = btnRect.bottom + "px";
+		popup.style.left = (btnRect.right - popupRect.width) + "px";
 	}
 	currentAccountAvatar = document.getElementById("currentAccountAvatar");
 
@@ -406,7 +396,7 @@ function processMessage(pm) {
 
 function authRedirect() {
 	var scopes = encodeURIComponent(["chat:edit", "chat:read", "user:read:chat", "whispers:read", "whispers:edit", "channel:moderate", "user:read:subscriptions", "user:read:follows", "user:manage:whispers", "user:manage:chat_color", "user:manage:blocked_users", "user:read:blocked_users"].join(' '));
-	window.open(`https://id.twitch.tv/oauth2/authorize?client_id=${clientID}&redirect_uri=${encodeURIComponent(window.location.href)}&response_type=token&scope=${scopes}`);
+	window.location.replace(`https://id.twitch.tv/oauth2/authorize?client_id=${clientID}&redirect_uri=${encodeURIComponent(window.location.href)}&response_type=token&scope=${scopes}`);
 }
 
 class ChatClient {
@@ -855,12 +845,14 @@ function onAccountChanged() {
 
 		{
 			accountButton.classList.remove("bi-person");
+			currentAccountAvatar.style.display = "inline";
 			currentAccountAvatar.src = activeAccount.avatarUrl;
 		}
 	}
 	else {
 		textInput.disabled = true;
 		textInput.placeholder = "You need to log in to send messages.";
+		currentAccountAvatar.style.display = "none";
 		accountButton.classList.add("bi-person");
 	}
 }
