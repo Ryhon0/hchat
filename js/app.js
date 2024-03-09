@@ -729,6 +729,12 @@ async function openChannelChat(name, id = undefined) {
 function switchTab(page) {
 	selectedChannel = undefined;
 
+	if(tlbox.children.length == 1)
+	{
+		tlbox.children[0].classList.remove("hidden");
+		return;
+	}
+
 	for (var b of channelList.children) {
 		b.classList.remove("active");
 		if (b.page == page)

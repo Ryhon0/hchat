@@ -127,6 +127,11 @@ button {
 	flex-direction: column-reverse;
 }
 
+#tlbox > #emptyMessage
+{
+	text-align: center;
+}
+
 .timeline {
 	word-wrap: break-word;
 }
