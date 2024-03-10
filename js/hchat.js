@@ -80,18 +80,14 @@ async function getJSONCached(url, opts = { timeout: 5000 })
 	var ch = await caches.open("hchat");
 	
 	var m = await ch.match(url);
-	console.log(m);
 	if(m)
 	{
-		var p = performance.now()
-		var json = await m.json();
-		console.log(performance.now() - p);
-		return json;
+		return await m.json();
 	}
 	else
 	{
 		var r = await fetch(url, opts);
-		ch.put(url, r);
+		ch.put(url, r.clone());
 		return await r.json();
 	}
 }
@@ -136,11 +132,32 @@ class HChat {
 	bttvBadges = {}
 
 	async init() {
+		// Run requests concurently
+		var emojiShortCodes = {};
+		var twitchBadges = {};
+		var tldResult = "";
+		var sevenTVGlobalSet = {}
+		var BTTVGlobalEmotes = {}
+		var BTTVBadges = {}
+		var FFZGlobalEmotes = {}
+		var FFZBadges = {}
+		await Promise.allSettled(
+			[
+				(async () => { emojiShortCodes = await getJSON("/data/emoji_shortcodes.json"); })(),
+				(async () => { twitchBadges = await this.Twitch.getGlobalBadges(); })(),
+				(async () => { tldResult = (await (await fetch("/data/tlds.txt")).text()).split('\n'); })(),
+				(async () => { sevenTVGlobalSet = await this.SevenTV.getGlobalEmoteSet(); })(),
+				(async () => { BTTVGlobalEmotes = await this.BTTV.getGlobalEmotes(); })(),
+				(async () => { BTTVBadges = await this.BTTV.getBadges(BTTVProvider.Twitch); })(),
+				(async () => { FFZGlobalEmotes = await this.FFZ.getGlobalEmoteSet(); })(),
+				(async () => { FFZBadges = await this.FFZ.getBadges(); })(),
+			]
+		);
+
 		// Emojis
 		{
-			var shorts = await getJSON("/data/emoji_shortcodes.json");
-			for (var ename in shorts) {
-				var euni = shorts[ename];
+			for (var ename in emojiShortCodes) {
+				var euni = emojiShortCodes[ename];
 
 				function toCodePoint(unicodeSurrogates, sep) {
 					var
@@ -179,7 +196,7 @@ class HChat {
 
 		// Twitch badge handling
 		{
-			this.globalTwitchBadges = parseTwitchBadges(await this.Twitch.getGlobalBadges());
+			this.globalTwitchBadges = parseTwitchBadges(twitchBadges);
 
 			/**
 			 * @param { Badge[] } list 
@@ -204,9 +221,8 @@ class HChat {
 
 		// Generate TLDs
 		{
-			var lines = (await (await fetch("/data/tlds.txt")).text()).split('\n')
-			for (var i in lines) {
-				var l = lines[i];
+			for (var i in tldResult) {
+				var l = tldResult[i];
 				if (l[0] == '#') continue;
 				if (l.length == 0) continue;
 
@@ -227,8 +243,7 @@ class HChat {
 		// Global 7TV emotes
 		{
 			try {
-				var set = await this.SevenTV.getGlobalEmoteSet();
-				this.globalEmotes = { ...this.globalEmotes, ...this.processSevenTVEmotes(set.emotes) };
+				this.globalEmotes = { ...this.globalEmotes, ...this.processSevenTVEmotes(sevenTVGlobalSet.emotes) };
 			}
 			catch (e) {
 				console.error("Failed to load global 7TV emotes");
@@ -242,8 +257,7 @@ class HChat {
 		// Global BTTV emotes
 		{
 			try {
-				var set = await this.BTTV.getGlobalEmotes();
-				this.globalEmotes = { ...this.globalEmotes, ...this.processBTTVEmotes(set) };
+				this.globalEmotes = { ...this.globalEmotes, ...this.processBTTVEmotes(BTTVGlobalEmotes) };
 			}
 			catch (e) {
 				console.error("Failed to load global BTTV emotes");
@@ -252,9 +266,8 @@ class HChat {
 
 			// Badges
 			{
-				var br = await this.BTTV.getBadges(BTTVProvider.Twitch);
-				for (var i in br) {
-					var bo = br[i];
+				for (var i in BTTVBadges) {
+					var bo = BTTVBadges[i];
 					var uid = Number(bo.providerId);
 
 					var b = new Badge();
@@ -287,9 +300,8 @@ class HChat {
 		// Global FFZ emotes
 		{
 			try {
-				var set = await this.FFZ.getGlobalEmoteSet();
-				for (var k in set.sets) {
-					this.globalEmotes = { ...this.globalEmotes, ...this.processFFZSet(set.sets[k].emoticons) };
+				for (var k in FFZGlobalEmotes.sets) {
+					this.globalEmotes = { ...this.globalEmotes, ...this.processFFZSet(FFZGlobalEmotes.sets[k].emoticons) };
 				}
 			}
 			catch (e) {
@@ -299,9 +311,8 @@ class HChat {
 
 			// Global badges
 			{
-				var br = await this.FFZ.getBadges();
-				for (var i in br.badges) {
-					var b = br.badges[i];
+				for (var i in FFZBadges.badges) {
+					var b = FFZBadges.badges[i];
 
 					var bi = new Badge();
 					bi.id = b.name;
@@ -313,7 +324,7 @@ class HChat {
 					this.globalFFZBadges[b.id + ""] = bi;
 				}
 
-				this.globalFFZBadgeOwners = br.users;
+				this.globalFFZBadgeOwners = FFZBadges.users;
 
 				/**
 				 * @param { Badge[] } list 
@@ -467,13 +478,27 @@ class HChatChannel {
 	}
 
 	async init() {
-		this.channelTwitchBadges = parseTwitchBadges(await this.hchat.Twitch.getChannelBadges(this.channelId));
+		// Run requests concurently
+		var twitchBadges = {};
+		var sevenTVUser = {};
+		var bttvUser = {};
+		var ffzRoom = {};
+		await Promise.allSettled(
+			[
+				(async () => { twitchBadges = await this.hchat.Twitch.getChannelBadges(this.channelId); })(),
+				(async () => { sevenTVUser = await this.hchat.SevenTV.getUserConnection(sevenTVPlatform.Twitch, this.channelId); })(),
+				(async () => { bttvUser = await this.hchat.BTTV.getUser(BTTVProvider.Twitch, this.channelId); })(),
+				(async () => { ffzRoom = await this.hchat.FFZ.getRoomTwitch(this.channelId); })(),
+				
+			]
+		);
+
+		this.channelTwitchBadges = parseTwitchBadges(twitchBadges);
 
 		// 7TV channel emotes
 		{
 			try {
-				var u = await this.hchat.SevenTV.getUserConnection(sevenTVPlatform.Twitch, this.channelId);
-				this.channelEmotes = { ...this.channelEmotes, ...this.hchat.processSevenTVEmotes(u.emote_set.emotes) };
+				this.channelEmotes = { ...this.channelEmotes, ...this.hchat.processSevenTVEmotes(sevenTVUser.emote_set.emotes) };
 			}
 			catch (e) {
 				console.error("Failed to load 7TV emotes for channel " + this.channelId);
@@ -484,10 +509,8 @@ class HChatChannel {
 		// BTTV channel emotes
 		{
 			try {
-				var u = await this.hchat.BTTV.getUser(BTTVProvider.Twitch, this.channelId);
-				this.channelEmotes = { ...this.channelEmotes, ...this.hchat.processBTTVEmotes(u.channelEmotes) };
-
-				this.botList = this.botList.concat(u.bots);
+				this.channelEmotes = { ...this.channelEmotes, ...this.hchat.processBTTVEmotes(bttvUser.channelEmotes) };
+				this.botList = this.botList.concat(bttvUser.bots);
 			}
 			catch (e) {
 				console.error("Failed to load BTTV channel " + this.channelId);
@@ -498,36 +521,34 @@ class HChatChannel {
 		// FFZ channel emotes and badges
 		{
 			try {
-				var u = await this.hchat.FFZ.getRoomTwitch(this.channelId);
-
-				for (var k in u.sets) {
-					this.channelEmotes = { ...this.channelEmotes, ...this.hchat.processFFZSet(u.sets[k].emoticons) };
+				for (var k in ffzRoom.sets) {
+					this.channelEmotes = { ...this.channelEmotes, ...this.hchat.processFFZSet(ffzRoom.sets[k].emoticons) };
 				}
 
-				if (u.room.vip_badge) {
+				if (ffzRoom.room.vip_badge) {
 					var vipb = new Badge();
 					vipb.title = "VIP";
 					vipb.id = "vip";
 					vipb.provider = hchatEmoteProviderFFZ;
-					vipb.img = u.room.vip_badge["4"];
+					vipb.img = ffzRoom.room.vip_badge["4"];
 					vipb._replaces = "vip";
 
 					this.ffzVIPBadge = vipb;
 				}
 
-				if (u.room.mod_urls) {
+				if (ffzRoom.room.mod_urls) {
 					var modb = new Badge();
 					modb.title = "Moderator";
 					modb.id = "moderator";
 					modb.provider = hchatEmoteProviderFFZ;
-					modb.img = u.room.mod_urls["4"];
+					modb.img = ffzRoom.room.mod_urls["4"];
 					modb.backgroundStyle = "#34AE0A";
 					modb._replaces = "moderator";
 
 					this.ffzModBadge = modb;
 				}
 
-				this.ffzBotBadgeOwnerIDs = u.room.user_badge_ids["2"] ?? [];
+				this.ffzBotBadgeOwnerIDs = ffzRoom.room.user_badge_ids["2"] ?? [];
 			}
 			catch (e) {
 				console.error("Failed to load FFZ emotes for channel " + this.channelId);
