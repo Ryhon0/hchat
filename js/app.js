@@ -65,25 +65,28 @@ async function loaded() {
 		for (var i in accounts) {
 			const acc = accounts[i];
 
-			if (acc.state != AccountStateChecking) continue;
+			if (acc.state == AccountStateChecking) {
+				const t = new TwitchAPI();
+				t.clientID = clientID;
+				t.token = acc.token;
 
-			const t = new TwitchAPI();
-			t.clientID = clientID;
-			t.token = acc.token;
+				t.validateToken().then(async (r) => {
+					if (r.login) {
+						t.getThisUser().then((u) => {
+							acc.name = u.display_name;
+							acc.avatarUrl = u.profile_image_url;
+							saveAccounts();
+						});
 
-			t.validateToken().then(async (r) => {
-				if (r.login) {
-					t.getThisUser().then((u) => {
-						acc.name = u.display_name;
-						acc.avatarUrl = u.profile_image_url;
-						saveAccounts();
-					});
-					acc.irc = new ChatClient(acc.name.toLowerCase(), acc.token);
-					acc.irc.onMessage = (msg) => { };
-					t.state = AccountStateReady;
-				}
-				else t.state = AccountStateExpired;
-			});
+						t.state = AccountStateReady;
+					}
+					else t.state = AccountStateExpired;
+				});
+			}
+			if (acc.state == AccountStateReady) {
+				acc.irc = new ChatClient(acc.name.toLowerCase(), acc.token);
+				acc.irc.onMessage = (msg) => { };
+			}
 		}
 	}
 
