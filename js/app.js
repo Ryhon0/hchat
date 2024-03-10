@@ -49,6 +49,7 @@ async function loaded() {
 
 				acc.token = atoken;
 				acc.state = AccountStateReady;
+				onAccountReady(acc);
 
 				saveAccounts();
 			}
@@ -79,13 +80,10 @@ async function loaded() {
 						});
 
 						t.state = AccountStateReady;
+						onAccountReady(acc);
 					}
 					else t.state = AccountStateExpired;
 				});
-			}
-			if (acc.state == AccountStateReady) {
-				acc.irc = new ChatClient(acc.name.toLowerCase(), acc.token);
-				acc.irc.onMessage = (msg) => { };
 			}
 		}
 	}
@@ -840,6 +838,12 @@ function saveAccounts() {
 	}
 
 	localStorage.setItem("accounts", JSON.stringify(dat));
+}
+
+function onAccountReady(acc)
+{
+	acc.irc = new ChatClient(acc.name.toLowerCase(), acc.token);
+	acc.irc.onMessage = (msg) => { };
 }
 
 function onAccountChanged() {
