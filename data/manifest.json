@@ -1,5 +1,5 @@
 {
-	"name": "Hydrogenino",
+	"name": "HChat",
 	"start_url": "/",
 	"display": "standalone",
 	"description": "Lightweight Twitch chat client",
