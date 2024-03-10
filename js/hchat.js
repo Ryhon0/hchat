@@ -53,6 +53,10 @@ class Link {
 	/**
 	 * @type { String }
 	 */
+	text = ""
+	/**
+	 * @type { String }
+	 */
 	url = ""
 }
 
@@ -648,9 +652,13 @@ class HChatChannel {
 
 		var comps = [];
 		for (s of input.split(/(\s+)/)) {
-			if (this.isURL(s)) {
+			var link = this.parseLink(s);
+			if (link) {
 				var l = new Link();
+				l.text = s;
 				l.url = s;
+				if(!link.protocol)
+					l.url = "https://" + l.url;
 				comps.push(l);
 				continue;
 			}
@@ -748,7 +756,7 @@ class HChatChannel {
 		this.channelCheerMotes = parseCheermotes(await this.hchat.Twitch.getCheermotes(this.channelId), true);
 	}
 
-	isURL(text) {
+	parseLink(text) {
 		var urlMatch = text.match(this.urlRegex);
 		if (urlMatch) {
 			var protocol = urlMatch.groups.protocol;
@@ -757,16 +765,26 @@ class HChatChannel {
 			var route = urlMatch.groups.route;
 
 			if (protocol != undefined)
-				if (this.allowedURLProtocols.indexOf(protocol.toLowerCase()) == -1) return false;
+			{
+				if (this.allowedURLProtocols.indexOf(protocol.toLowerCase()) == -1) return undefined;
+			}
 			if (port != undefined) {
 				var portn = Number(port);
-				if (portn < 0 && portn <= 65535) return;
+				if (portn < 0 && portn <= 65535) return undefined;
 			}
 
-			return this.isDomainValid(domain)
+			if(this.isDomainValid(domain))
+			{
+				return {
+					protocol: protocol,
+					domain: domain,
+					port: port,
+					route: route
+				};
+			}
 		}
 
-		return false;
+		return undefined;
 	}
 
 	isDomainValid(d) {

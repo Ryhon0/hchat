@@ -352,7 +352,7 @@ function processMessage(pm) {
 			var a = document.createElement("a");
 			a.classList.add("link");
 			a.href = c.url;
-			a.innerText = c.url;
+			a.innerText = c.text;
 			a.target = "_blank";
 			mi.appendChild(a);
 		}
