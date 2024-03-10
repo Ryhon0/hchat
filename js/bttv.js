@@ -46,7 +46,7 @@ class BTTVAPI {
 	}
 
 	async getGlobalEmotes() {
-		return await getJSON(this.buildAPIURL(BTTVAPIGetGlobalEmotes));
+		return await getJSONCached(this.buildAPIURL(BTTVAPIGetGlobalEmotes));
 	}
 
 	/**

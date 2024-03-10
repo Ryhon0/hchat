@@ -31,7 +31,7 @@ class FFZAPI
 
 	async getBadges()
 	{
-		return await getJSON(this.buildAPIURL(FFZAPIGetBadgesRoute));
+		return await getJSONCached(this.buildAPIURL(FFZAPIGetBadgesRoute));
 	}
 
 	/**
@@ -42,6 +42,11 @@ class FFZAPI
 	async getEmoteSet(set_id)
 	{
 		return await getJSON(this.buildAPIURL(FFZAPIGetEmoteSet.format(set_id)));
+	}
+
+	async getGlobalEmoteSet(set_id)
+	{
+		return await getJSONCached(this.buildAPIURL(FFZAPIGetEmoteSet.format(FFZAPIGlobalEmoteSetID)));
 	}
 
 	/**

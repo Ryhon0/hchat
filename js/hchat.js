@@ -75,6 +75,27 @@ async function getJSON(url, opts = { timeout: 5000 }) {
 	return await (await fetch(url, opts)).json();
 }
 
+async function getJSONCached(url, opts = { timeout: 5000 })
+{
+	var ch = await caches.open("hchat");
+	
+	var m = await ch.match(url);
+	console.log(m);
+	if(m)
+	{
+		var p = performance.now()
+		var json = await m.json();
+		console.log(performance.now() - p);
+		return json;
+	}
+	else
+	{
+		var r = await fetch(url, opts);
+		ch.put(url, r);
+		return await r.json();
+	}
+}
+
 class Badge {
 	/** @type {string} */
 	id = null
@@ -206,7 +227,7 @@ class HChat {
 		// Global 7TV emotes
 		{
 			try {
-				var set = await this.SevenTV.getEmoteSet(sevenTVEmoteSetGlobalID);
+				var set = await this.SevenTV.getGlobalEmoteSet();
 				this.globalEmotes = { ...this.globalEmotes, ...this.processSevenTVEmotes(set.emotes) };
 			}
 			catch (e) {
@@ -266,7 +287,7 @@ class HChat {
 		// Global FFZ emotes
 		{
 			try {
-				var set = await this.FFZ.getEmoteSet(FFZAPIGlobalEmoteSetID);
+				var set = await this.FFZ.getGlobalEmoteSet();
 				for (var k in set.sets) {
 					this.globalEmotes = { ...this.globalEmotes, ...this.processFFZSet(set.sets[k].emoticons) };
 				}

@@ -57,6 +57,11 @@ class SevenTVAPI {
 		return await getJSON(this.buildAPIURL(sevenTVAPIGetEmoteSetsRoute.format(set_id)));
 	}
 
+	async getGlobalEmoteSet() {
+		return await getJSONCached(this.buildAPIURL(sevenTVAPIGetEmoteSetsRoute.format(sevenTVEmoteSetGlobalID)));
+	}
+
+
 	/**
 	 * 
 	 * @param {string} emote_id 

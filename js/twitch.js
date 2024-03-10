@@ -63,10 +63,10 @@ class TwitchAPI {
 	}
 
 	async getGlobalEmotes() {
-		if (this.useIVR())
-			return await getJSON(this.BaseIVRURL + "/v2/badges/global");
-		else
-			return (await this.getJSONAuthenticated(this.BaseHelixURL + "/chat/emotes/global")).data;
+		//if (this.useIVR())
+			return await getJSONCached(this.BaseIVRURL + "/v2/badges/global");
+		//else
+		//	return (await this.getJSONAuthenticated(this.BaseHelixURL + "/chat/emotes/global")).data;
 	}
 
 	async getChannelEmotes(channel_id) {
@@ -77,18 +77,18 @@ class TwitchAPI {
 	}
 
 	async getGlobalBadges() {
-		if (this.useIVR())
-			return await getJSON(this.BaseIVRURL + "/v2/twitch/badges/global");
-		else
-			return (await this.getJSONAuthenticated(this.BaseHelixURL + "/chat/badges/global")).data;
+		//if (this.useIVR())
+			return await getJSONCached(this.BaseIVRURL + "/v2/twitch/badges/global");
+		//else
+		//	return (await this.getJSONAuthenticated(this.BaseHelixURL + "/chat/badges/global")).data;
 
 	}
 
 	async getChannelBadges(channel_id) {
-		if (this.useIVR())
-			return await getJSON(this.BaseIVRURL + "/v2/twitch/badges/channel?id=" + channel_id);
-		else
-			return (await this.getJSONAuthenticated(this.BaseHelixURL + "/chat/badges?broadcaster_id=" + channel_id)).data;
+		//if (this.useIVR())
+			return await getJSONCached(this.BaseIVRURL + "/v2/twitch/badges/channel?id=" + channel_id);
+		//else
+		//	return (await this.getJSONAuthenticated(this.BaseHelixURL + "/chat/badges?broadcaster_id=" + channel_id)).data;
 	}
 
 	async getCheermotes() {
