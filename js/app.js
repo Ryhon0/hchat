@@ -154,6 +154,59 @@ async function loaded() {
 	}
 	currentAccountAvatar = document.getElementById("currentAccountAvatar");
 
+	var uploadButton = document.getElementById("uploadButton");
+	uploadButton.onclick = () => {
+		var fi = document.createElement("input");
+		fi.type = "file";
+		fi.addEventListener("change", () => {
+			if (fi.files.length != 1) return;
+
+			const fr = new FileReader();
+			var f = fi.files[0];
+			fr.readAsArrayBuffer(f);
+			fr.onload = async () => {
+				var r = await new Uploader().upload(new Blob([fr.result], {type: f.type}), f.name);
+				if(r.link)
+				{
+					{
+						var b = document.createElement("div");
+						b.innerText = "File uploaded to ";
+
+						var a = document.createElement("a");
+						a.href = r.link;
+						a.innerText = r.link;
+						a.target = "_blank";
+
+						b.appendChild(a);
+						selectedChannel.timeline.appendChild(b);
+					}
+
+					if(textInput.value && textInput.value[textInput.value.length - 1] != ' ')
+					{
+						textInput.value += ' ';
+					}
+					textInput.value += r.link;
+
+					if(r.delete)
+					{
+						var b = document.createElement("div");
+						b.innerText = "Delete link: ";
+
+						var a = document.createElement("a");
+						a.href = r.delete;
+						a.innerText = r.delete;
+						a.target = "_blank";
+
+						b.appendChild(a);
+						selectedChannel.timeline.appendChild(b);
+					}
+				}
+			};
+
+		});
+		fi.click();
+	};
+
 	onAccountChanged();
 
 	textInput.addEventListener("keydown", (ev) => {
@@ -840,8 +893,7 @@ function saveAccounts() {
 	localStorage.setItem("accounts", JSON.stringify(dat));
 }
 
-function onAccountReady(acc)
-{
+function onAccountReady(acc) {
 	acc.irc = new ChatClient(acc.name.toLowerCase(), acc.token);
 	acc.irc.onMessage = (msg) => { };
 }
