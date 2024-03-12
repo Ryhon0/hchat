@@ -416,8 +416,14 @@ function processMessage(pm) {
 			s.style.color = cachedUserColors[c.username.toLowerCase()];
 			mi.appendChild(s);
 
-			// if (c.username.toLowerCase() == chatWS.username)
-			// 	mentioned = true;
+			for(var u of accounts)
+			{
+				if (c.username.toLowerCase() == u.name.toLowerCase())
+				{
+					mentioned = true;
+					break;
+				}
+			}
 		}
 		else if (c instanceof CheerMote) {
 			var s = document.createElement("span");
