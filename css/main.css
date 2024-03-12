@@ -135,6 +135,27 @@ button {
 .timeline .reply
 {
 	font-size: 0.75em;
+	cursor: pointer;
+}
+
+.timeline .highlight
+{
+	animation-name: replyHighlight;
+	animation-duration: 1s;
+	animation-play-state: running;
+}
+
+@keyframes replyHighlight {
+	0%,
+	50%,
+	100% {
+		background-color: transparent;
+	}
+
+	25%,
+	75% {
+		background-color: white;
+	}
 }
 
 .timeline>* {

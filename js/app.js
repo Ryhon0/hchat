@@ -336,7 +336,7 @@ function processMessage(pm) {
 	messagesById[pm.tags.id] = pm;
 
 	// Reply
-	var replyId = pm.tags["reply-parent-msg-id"];
+	const replyId = pm.tags["reply-parent-msg-id"];
 	if (replyId) {
 		var replyElem = document.createElement("div");
 		replyElem.innerHTML = "Replying to ";
@@ -361,6 +361,20 @@ function processMessage(pm) {
 		}
 
 		replyElem.appendChild(getFullMessageElement(channel, rm));
+		replyElem.onclick = (ev) => 
+		{
+			const ri = document.getElementById("message#" + replyId);
+			if(ri)
+			{
+				ri.scrollIntoView({behavior: 'smooth', block: 'center'});
+				ri.classList.add('highlight');
+				setTimeout(() => 
+				{
+					ri.classList.remove('highlight');
+				}, 1000);
+				ev.preventDefault();
+			}
+		};
 
 		mi.appendChild(replyElem);
 	}
