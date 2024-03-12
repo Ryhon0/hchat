@@ -16,6 +16,9 @@ var channelList;
 var accountButton;
 var currentAccountAvatar;
 
+/** @type { Element } */
+var tooltip;
+
 async function loaded() {
 	accounts = loadSavedAccounts();
 
@@ -227,6 +230,7 @@ async function loaded() {
 	{
 		var hchatBadge = new Badge();
 		hchatBadge.id = "hchat";
+		hchatBadge.title = "HChat user";
 		hchatBadge.description = "This message was sent using HChat";
 		hchatBadge.img = "/icon.png";
 		function getHChatBadges(list, msg, hchannel) {
@@ -365,8 +369,6 @@ function processMessage(pm) {
 		// Check if replying to one of the accounts
 		{
 			for (var a of accounts) {
-				console.log(a.id);
-				console.log(rm.userId());
 				if (Number(a.id) == rm.userId()) {
 					mentioned = true;
 					break;
@@ -456,12 +458,30 @@ function getBadgeElement(channel, pm) {
 	bl.classList.add("badges");
 
 	var blist = channel.hchannel.getBadgesForMessage(pm);
-	for (var ba of blist) {
-		var bi = document.createElement("img");
+	for (const ba of blist) {
+		const bi = document.createElement("img");
 		bi.src = ba.img;
 		bi.alt = ba.title;
 		bi.style.background = ba.backgroundStyle;
 		bl.appendChild(bi);
+
+		bi.onmouseover = () => {
+			const tex = document.createElement("div");
+			tex.classList.add("emoteTooltip");
+
+			const timg = document.createElement("img");
+			timg.src = ba.img;
+
+			tex.appendChild(timg);
+			tex.appendChild(document.createTextNode(ba.title));
+			if(ba.description && ba.description != ba.title)
+			{
+				tex.appendChild(document.createElement("br"));
+				tex.appendChild(document.createTextNode(ba.description));
+			}
+
+			showTooltip(bl, tex);
+		};
 	}
 	return bl;
 }
@@ -476,17 +496,44 @@ function getMessageComponentsElement(channel, pm, mentionCb = undefined) {
 	var comps = channel.hchannel.foldMessageComponents(channel.hchannel.parseMessageComponents(pm.content, pm));
 	for (c of comps) {
 		if (c instanceof Emote) {
-			var info = c.info;
-			var img = document.createElement("img");
+			const info = c.info;
+
+			const img = document.createElement("img");
 			img.src = c.info.getImageURL(3);
 			img.alt = c.info.getName();
 
-			var imgspan = document.createElement("span");
+			const imgspan = document.createElement("span");
 			imgspan.classList.add("emote");
 			imgspan.appendChild(img);
 
-			for (ov of c.overlays) {
-				var img = document.createElement("img");
+			const overlays = c.overlays;
+
+			imgspan.onmouseover = () => {
+				var tex = document.createElement("div");
+				tex.classList.add("emoteTooltip");
+
+				var timg = document.createElement("img");
+				timg.src = info.getImageURL(3);
+				tex.appendChild(timg);
+				tex.appendChild(document.createTextNode(info.getName()));
+
+				if (overlays.length) {
+					tex.appendChild(document.createElement("br"));
+					tex.appendChild(document.createTextNode("Overlays:"));
+
+					for (ov of overlays) {
+						const timg = document.createElement("img");
+						timg.src = ov.info.getImageURL(3);
+						tex.appendChild(timg);
+						tex.appendChild(document.createTextNode(ov.info.getName()));
+					}
+				}
+
+				showTooltip(imgspan, tex);
+			};
+
+			for (ov of overlays) {
+				const img = document.createElement("img");
 				img.src = ov.info.getImageURL(3);
 				img.alt = c.info.getName();
 
@@ -587,6 +634,41 @@ function getFullMessageElement(channel, pm, mentionCb = undefined) {
 function authRedirect() {
 	var scopes = encodeURIComponent(["chat:edit", "chat:read", "user:read:chat", "whispers:read", "whispers:edit", "channel:moderate", "user:read:subscriptions", "user:read:follows", "user:manage:whispers", "user:manage:chat_color", "user:manage:blocked_users", "user:read:blocked_users"].join(' '));
 	window.location.replace(`https://id.twitch.tv/oauth2/authorize?client_id=${clientID}&redirect_uri=${encodeURIComponent(window.location.href)}&response_type=token&scope=${scopes}`);
+}
+
+/**
+ * @param { Element } parent 
+ * @param { Element } what 
+ */
+function showTooltip(parent, what) {
+	if (tooltip)
+		tooltip.remove();
+
+	tooltip = what;
+
+	what.classList.add("tooltip");
+	parent.appendChild(what);
+
+	var parentBbox = parent.getBoundingClientRect();
+	var tipBbox = what.getBoundingClientRect();
+
+	var y = parentBbox.bottom + 4;
+	var x = (parentBbox.right - (parentBbox.width / 2)) - (tipBbox.width / 2)
+
+	if (y + tipBbox.height > document.documentElement.clientHeight) {
+		y = document.documentElement.clientHeight - tipBbox.height;
+	}
+
+	if (x < 0) x = 0;
+	if(x + tipBbox.width > document.documentElement.clientWidth)
+	{
+		x = document.documentElement.clientWidth - tipBbox.width;
+	}
+
+	what.style.top = y + "px";
+	what.style.left = x + "px";
+
+	parent.onmouseleave = () => { what.remove() };
 }
 
 class ChatClient {
