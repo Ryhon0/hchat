@@ -280,7 +280,7 @@ function processMessage(pm) {
 		return;
 	}
 
-	var mi = document.createElement("li");
+	var mi = document.createElement("div");
 	mi.classList.add("message");
 	mi.id = "message#" + pm.tags.id;
 
@@ -350,6 +350,17 @@ function processMessage(pm) {
 			mi.style.color = namecolor;
 		mi.classList.add("action");
 		pm.content = pm.content.substring("ACTION".length, pm.content.length - 1);
+	}
+
+	// Time
+	{
+		var ts = document.createElement("span");
+		ts.classList.add("time");
+
+		var t = new Date(pm.time);
+		ts.innerText = t.getHours() + ":" + String(t.getMinutes()).padStart(2, '0');
+		
+		mi.appendChild(ts);
 	}
 
 	// Badges

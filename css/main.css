@@ -50,7 +50,7 @@ body {
 	background-color: #222222;
 }
 
-#channelList{
+#channelList {
 	flex-grow: 1;
 	overflow-x: auto;
 	overflow-y: hidden;
@@ -58,8 +58,7 @@ body {
 	scrollbar-width: none;
 }
 
-#channelList > *
-{
+#channelList>* {
 	display: flex;
 	padding: 1em;
 	align-items: center;
@@ -68,18 +67,15 @@ body {
 	gap: 0.5em;
 }
 
-#channelList > .active
-{
+#channelList>.active {
 	background-color: #2d4c21;
 }
 
-#channelList > * > .closeButton
-{
+#channelList>*>.closeButton {
 	display: none;
 }
 
-#channelList > .active > .closeButton
-{
+#channelList>.active>.closeButton {
 	font-size: 0.65em;
 	text-align: center;
 	display: block;
@@ -117,8 +113,7 @@ button {
 	cursor: pointer;
 }
 
-.square 
-{
+.square {
 	aspect-ratio: 1;
 }
 
@@ -129,8 +124,7 @@ button {
 	flex-direction: column-reverse;
 }
 
-#tlbox > #emptyMessage
-{
+#tlbox>#emptyMessage {
 	text-align: center;
 }
 
@@ -138,42 +132,47 @@ button {
 	word-wrap: break-word;
 }
 
-.timeline>li {
-	padding: 0.2em 1em;
-	list-style-type: none;
+.timeline>* {
+	padding: 0.2em;
+	padding-left: 0.5em;
 }
 
-.timeline>li a.link {
+.timeline>* .time {
+	padding-right: 0.3em;
+	opacity: 50%;
+}
+
+.timeline>* a.link {
 	color: #3a3ae5;
 }
 
-.timeline>li {
+.timeline>* {
 	--bg-color: #333;
 	--bg-color-other: #222;
 	background-color: var(--bg-color);
 }
 
-.timeline>li:nth-child(2n) {
+.timeline>:nth-child(2n) {
 	background-color: color-mix(in srgb, var(--bg-color), #000 10%)
 }
 
-.timeline>li.mentioned {
+.timeline>.mentioned {
 	--bg-color: rgb(168 93 6);
 }
 
-.timeline>li.first {
+.timeline>.first {
 	--bg-color: rgb(58, 128, 33);
 }
 
-.timeline>li.sub {
+.timeline>.sub {
 	--bg-color: #9146FF;
 }
 
-.timeline>li.raid {
+.timeline>.raid {
 	--bg-color: #e87044;
 }
 
-.timeline>li.redeem {
+.timeline>.redeem {
 	--bg-color: #4197cc;
 }
 
@@ -213,16 +212,14 @@ button {
 	top: 0px;
 }
 
-.popupMenu
-{
+.popupMenu {
 	background: #222;
 	display: flex;
 	flex-direction: column;
 	position: absolute;
 }
 
-#currentAccountAvatar
-{
+#currentAccountAvatar {
 	max-width: 1.25em;
 	height: 1.25em;
 }
