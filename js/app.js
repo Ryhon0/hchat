@@ -30,7 +30,7 @@ async function loaded() {
 			var r = await t.validateToken();
 
 			if (r.user_id) {
-				var id = r.user_id;
+				var id = Number(r.user_id);
 				var acc = getAccountById(id);
 
 				if (acc == null) {
@@ -335,6 +335,8 @@ function processMessage(pm) {
 
 	messagesById[pm.tags.id] = pm;
 
+	var mentioned = false;
+
 	// Reply
 	const replyId = pm.tags["reply-parent-msg-id"];
 	if (replyId) {
@@ -360,16 +362,25 @@ function processMessage(pm) {
 			rm.tags.color = cachedUserColors[replyLogin];
 		}
 
-		replyElem.appendChild(getFullMessageElement(channel, rm));
-		replyElem.onclick = (ev) => 
+		// Check if replying to one of the accounts
 		{
+			for (var a of accounts) {
+				console.log(a.id);
+				console.log(rm.userId());
+				if (Number(a.id) == rm.userId()) {
+					mentioned = true;
+					break;
+				}
+			}
+		}
+
+		replyElem.appendChild(getFullMessageElement(channel, rm));
+		replyElem.onclick = (ev) => {
 			const ri = document.getElementById("message#" + replyId);
-			if(ri)
-			{
-				ri.scrollIntoView({behavior: 'smooth', block: 'center'});
+			if (ri) {
+				ri.scrollIntoView({ behavior: 'smooth', block: 'center' });
 				ri.classList.add('highlight');
-				setTimeout(() => 
-				{
+				setTimeout(() => {
 					ri.classList.remove('highlight');
 				}, 1000);
 				ev.preventDefault();
@@ -399,7 +410,16 @@ function processMessage(pm) {
 
 		// Full message
 		{
-			contentElem.appendChild(getFullMessageElement(channel, pm));
+			contentElem.appendChild(getFullMessageElement(channel, pm, (name) => {
+				if (!mentioned) {
+					for (var a of accounts) {
+						if (a.name.toLowerCase() == name.toLowerCase()) {
+							mentioned = true;
+							break;
+						}
+					}
+				}
+			}));
 		}
 	}
 
@@ -419,9 +439,8 @@ function processMessage(pm) {
 
 		// Mention
 		{
-			var mentioned = false;
 			if (mentioned)
-				mi.classList.add("mentioned")
+				mi.classList.add("mentioned");
 		}
 	}
 
@@ -451,7 +470,7 @@ function getBadgeElement(channel, pm) {
  * @param { Channel } channel 
  * @param { Message } pm 
  */
-function getMessageComponentsElement(channel, pm) {
+function getMessageComponentsElement(channel, pm, mentionCb = undefined) {
 	var ms = document.createElement("span");
 
 	var comps = channel.hchannel.foldMessageComponents(channel.hchannel.parseMessageComponents(pm.content, pm));
@@ -490,6 +509,8 @@ function getMessageComponentsElement(channel, pm) {
 			s.innerText = "@" + c.username;
 			s.style.color = cachedUserColors[c.username.toLowerCase()];
 			ms.appendChild(s);
+
+			if (mentionCb) mentionCb(c.username);
 		}
 		else if (c instanceof CheerMote) {
 			var s = document.createElement("span");
@@ -521,7 +542,7 @@ function getMessageComponentsElement(channel, pm) {
  * @param { Channel } channel 
  * @param { Message } pm 
  */
-function getFullMessageElement(channel, pm) {
+function getFullMessageElement(channel, pm, mentionCb = undefined) {
 	var mi = document.createElement("span");
 
 	var namecolor = pm.tags.color;
@@ -555,7 +576,7 @@ function getFullMessageElement(channel, pm) {
 		mi.appendChild(nameSpan);
 	}
 
-	var comps = getMessageComponentsElement(channel, pm);
+	var comps = getMessageComponentsElement(channel, pm, mentionCb);
 	if (isAction && namecolor)
 		comps.style.color = namecolor;
 	mi.appendChild(comps);
