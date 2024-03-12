@@ -132,6 +132,11 @@ button {
 	word-wrap: break-word;
 }
 
+.timeline .reply
+{
+	font-size: 0.75em;
+}
+
 .timeline>* {
 	padding: 0.2em;
 	padding-left: 0.5em;

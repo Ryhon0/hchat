@@ -165,9 +165,8 @@ async function loaded() {
 			var f = fi.files[0];
 			fr.readAsArrayBuffer(f);
 			fr.onload = async () => {
-				var r = await new Uploader().upload(new Blob([fr.result], {type: f.type}), f.name);
-				if(r.link)
-				{
+				var r = await new Uploader().upload(new Blob([fr.result], { type: f.type }), f.name);
+				if (r.link) {
 					{
 						var b = document.createElement("div");
 						b.innerText = "File uploaded to ";
@@ -181,14 +180,12 @@ async function loaded() {
 						selectedChannel.timeline.appendChild(b);
 					}
 
-					if(textInput.value && textInput.value[textInput.value.length - 1] != ' ')
-					{
+					if (textInput.value && textInput.value[textInput.value.length - 1] != ' ') {
 						textInput.value += ' ';
 					}
 					textInput.value += r.link;
 
-					if(r.delete)
-					{
+					if (r.delete) {
 						var b = document.createElement("div");
 						b.innerText = "Delete link: ";
 
@@ -267,6 +264,7 @@ async function loaded() {
 	}
 }
 
+var messagesById = {};
 /**
  * @param { Message } pm 
  */
@@ -280,10 +278,15 @@ function processMessage(pm) {
 		return;
 	}
 
+	if (pm.content[pm.content.length - 1] == '\r')
+		pm.content = pm.content.substring(0, pm.content.length - 1);
+
 	var mi = document.createElement("div");
 	mi.classList.add("message");
 	mi.id = "message#" + pm.tags.id;
 
+
+	// Sub messages, raids
 	if (pm.command.command == "USERNOTICE") {
 		switch (pm.tags["msg-id"]) {
 			case "subgift":
@@ -330,66 +333,113 @@ function processMessage(pm) {
 		}
 	}
 
-	if (pm.tags["custom-reward-id"] || pm.tags["msg-id"] == "highlighted-message")
-		mi.classList.add("redeem");
+	messagesById[pm.tags.id] = pm;
 
-	if (pm.content[pm.content.length - 1] == '\r')
-		pm.content = pm.content.substring(0, pm.content.length - 1);
+	// Reply
+	var replyId = pm.tags["reply-parent-msg-id"];
+	if (replyId) {
+		var replyElem = document.createElement("div");
+		replyElem.innerHTML = "Replying to ";
+		replyElem.classList.add("reply");
 
-	var namecolor = pm.tags.color;
-	cachedUserColors[pm.user] = namecolor;
+		// Remove @mention
+		var replyLogin = pm.tags["reply-parent-user-login"];
+		if (pm.content.startsWith("ACTION") && pm.content[pm.content.length - 1] == "") {
+			pm.content = "ACTION" + pm.content.substring("ACTION".length + 2 + replyLogin.length);
+		}
+		else pm.content = pm.content.substring(2 + replyLogin.length);
 
-	if (pm.tags["first-msg"] == "1")
-		mi.classList.add("first");
-
-	var isAction = false;
-
-	if (pm.content.startsWith("ACTION") && pm.content[pm.content.length - 1] == "") {
-		isAction = true;
-		if (namecolor)
-			mi.style.color = namecolor;
-		mi.classList.add("action");
-		pm.content = pm.content.substring("ACTION".length, pm.content.length - 1);
-	}
-
-	// Time
-	{
-		var ts = document.createElement("span");
-		ts.classList.add("time");
-
-		var t = new Date(pm.time);
-		ts.innerText = t.getHours() + ":" + String(t.getMinutes()).padStart(2, '0');
-		
-		mi.appendChild(ts);
-	}
-
-	// Badges
-	{
-		var bl = document.createElement("span");
-		bl.classList.add("badges");
-
-		var blist = channel.hchannel.getBadgesForMessage(pm);
-		for (var ba of blist) {
-			var bi = document.createElement("img");
-			bi.src = ba.img;
-			bi.alt = ba.title;
-			bi.style.background = ba.backgroundStyle;
-			bl.appendChild(bi);
+		var rm = messagesById[replyId];
+		if (!rm) {
+			rm = new Message();
+			rm.content = pm.tags["reply-parent-msg-body"];
+			rm.tags["display-name"] = pm.tags["reply-parent-display-name"];
+			rm.tags["user-id"] = pm.tags["reply-parent-user-id"];
+			rm.user = replyLogin;
+			rm.tags.login = replyLogin;
+			rm.tags.color = cachedUserColors[replyLogin];
 		}
 
-		mi.appendChild(bl);
+		replyElem.appendChild(getFullMessageElement(channel, rm));
+
+		mi.appendChild(replyElem);
 	}
 
-	var nameSpan = document.createElement("b");
-	nameSpan.classList.add("username");
-	nameSpan.innerText = pm.displayName();
-	if (!isAction)
-		nameSpan.innerText += ": ";
-	if (namecolor)
-		nameSpan.style.color = namecolor;
-	mi.appendChild(nameSpan);
+	// Content 
+	// The actual message sent by the user
+	{
+		var contentElem = document.createElement("div");
+		contentElem.classList.add("content");
+		mi.appendChild(contentElem);
 
-	var mentioned = false;
+		// Timestamp
+		{
+			var ts = document.createElement("span");
+			ts.classList.add("time");
+
+			var t = new Date(pm.time);
+			ts.innerText = t.getHours() + ":" + String(t.getMinutes()).padStart(2, '0');
+
+			contentElem.appendChild(ts);
+		}
+
+		// Full message
+		{
+			contentElem.appendChild(getFullMessageElement(channel, pm));
+		}
+	}
+
+	// Highlight colors
+	{
+		// Redeem
+		{
+			if (pm.tags["custom-reward-id"] || pm.tags["msg-id"] == "highlighted-message")
+				mi.classList.add("redeem");
+		}
+
+		// First message
+		{
+			if (pm.tags["first-msg"] == "1")
+				mi.classList.add("first");
+		}
+
+		// Mention
+		{
+			var mentioned = false;
+			if (mentioned)
+				mi.classList.add("mentioned")
+		}
+	}
+
+	channel.timeline.appendChild(mi);
+}
+
+/**
+ * @param { Channel } channel 
+ * @param { Message } pm 
+ */
+function getBadgeElement(channel, pm) {
+	var bl = document.createElement("span");
+	bl.classList.add("badges");
+
+	var blist = channel.hchannel.getBadgesForMessage(pm);
+	for (var ba of blist) {
+		var bi = document.createElement("img");
+		bi.src = ba.img;
+		bi.alt = ba.title;
+		bi.style.background = ba.backgroundStyle;
+		bl.appendChild(bi);
+	}
+	return bl;
+}
+
+/**
+ * @param { Channel } channel 
+ * @param { Message } pm 
+ */
+function getMessageComponentsElement(channel, pm) {
+	var ms = document.createElement("span");
+
 	var comps = channel.hchannel.foldMessageComponents(channel.hchannel.parseMessageComponents(pm.content, pm));
 	for (c of comps) {
 		if (c instanceof Emote) {
@@ -410,7 +460,7 @@ function processMessage(pm) {
 				imgspan.appendChild(img);
 			}
 
-			mi.appendChild(imgspan);
+			ms.appendChild(imgspan);
 		}
 		else if (c instanceof Link) {
 			var a = document.createElement("a");
@@ -418,23 +468,14 @@ function processMessage(pm) {
 			a.href = c.url;
 			a.innerText = c.text;
 			a.target = "_blank";
-			mi.appendChild(a);
+			ms.appendChild(a);
 		}
 		else if (c instanceof Mention) {
 			var s = document.createElement("span");
 			s.classList.add("mention");
 			s.innerText = "@" + c.username;
 			s.style.color = cachedUserColors[c.username.toLowerCase()];
-			mi.appendChild(s);
-
-			for(var u of accounts)
-			{
-				if (c.username.toLowerCase() == u.name.toLowerCase())
-				{
-					mentioned = true;
-					break;
-				}
-			}
+			ms.appendChild(s);
 		}
 		else if (c instanceof CheerMote) {
 			var s = document.createElement("span");
@@ -452,17 +493,60 @@ function processMessage(pm) {
 			s.appendChild(imgspan);
 			s.appendChild(document.createTextNode(c.value));
 
-			mi.appendChild(s);
+			ms.appendChild(s);
 		}
 		else {
-			mi.appendChild(document.createTextNode(c));
+			ms.appendChild(document.createTextNode(c));
 		}
 	}
 
-	if (mentioned)
-		mi.classList.add("mentioned")
+	return ms;
+}
 
-	channel.timeline.appendChild(mi);
+/**
+ * @param { Channel } channel 
+ * @param { Message } pm 
+ */
+function getFullMessageElement(channel, pm) {
+	var mi = document.createElement("span");
+
+	var namecolor = pm.tags.color;
+	cachedUserColors[pm.user] = namecolor;
+
+	var isAction = false;
+	// TODO: Don't modify the content
+	if (pm.content.startsWith("ACTION") && pm.content[pm.content.length - 1] == "") {
+		isAction = true;
+		if (namecolor) {
+			mi.style.color = namecolor;
+		}
+		mi.classList.add("action");
+		pm.content = pm.content.substring("ACTION".length, pm.content.length - 1);
+	}
+
+	// Badges
+	{
+		mi.appendChild(getBadgeElement(channel, pm));
+	}
+
+	// Username
+	{
+		var nameSpan = document.createElement("b");
+		nameSpan.classList.add("username");
+		nameSpan.innerText = pm.displayName();
+		if (!isAction)
+			nameSpan.innerText += ": ";
+		if (namecolor)
+			nameSpan.style.color = namecolor;
+		mi.appendChild(nameSpan);
+	}
+
+	var comps = getMessageComponentsElement(channel, pm);
+	if (isAction && namecolor)
+		comps.style.color = namecolor;
+	mi.appendChild(comps);
+
+	return mi;
 }
 
 function authRedirect() {
