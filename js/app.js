@@ -19,7 +19,48 @@ var currentAccountAvatar;
 /** @type { Element } */
 var tooltip;
 
+async function selfUpdate()
+{
+	console.log("Checking for update...");
+
+	var scriptSources = [];
+
+	var scripts = document.getElementsByTagName("script");
+	for(var s of scripts)
+	{
+		if(s.src)
+			scriptSources.push(s.src);
+	}
+
+	var cached = await fetch("/js/app.js", {
+		cache: 'force-cache'
+	});
+	var fresh = await fetch("/js/app.js", {
+		cache: 'reload'
+	});
+
+	var cachedDate = new Date(cached.headers.get("Last-Modified"));
+	var freshDate = new Date(fresh.headers.get("Last-Modified"));
+	
+	console.log("Cached date: " + cachedDate);
+	console.log("Fresh date: " + freshDate);
+
+	if(freshDate > cachedDate)
+	{
+		console.log("Updating scripts...");
+
+		for(var s of scriptSources)
+		{
+			await fetch(s, { cache: 'reload' });
+		}
+
+		location.reload();
+	}
+}
+
 async function loaded() {
+	selfUpdate().then(()=>{});
+
 	accounts = loadSavedAccounts();
 
 	// OAuth redirect handling
