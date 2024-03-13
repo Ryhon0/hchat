@@ -270,3 +270,14 @@ button {
 {
 	height: 3em;
 }
+
+.message.deleted
+{
+	opacity: 0.25;
+}
+
+.message.deletion
+{
+	opacity: 0.5;
+	cursor: pointer;
+}

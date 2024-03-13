@@ -274,13 +274,63 @@ var messagesById = {};
  */
 function processMessage(pm) {
 	if (!pm || !pm.command) return;
-	if (["PRIVMSG", "USERNOTICE"].indexOf(pm.command.command) == -1) return;
 
 	var channel = getChannelById(pm.roomId());
 	if (!channel) {
 		console.error("Recieved message in channel " + pm.roomId() + ", but no chat with this name was opened");
 		return;
 	}
+
+	if(pm.command.command == "CLEARMSG")
+	{
+		const mid = pm.tags["target-msg-id"];
+		
+		const me = document.getElementById("message#" + mid);
+		if(me) me.classList.add("deleted");
+		
+		var rm = messagesById[Number(mid)] ?? pm;
+		console.log("Deleted");
+
+		{
+			var mi = document.createElement("div");
+			mi.classList.add("message");
+			mi.classList.add("deletion");
+			
+			var c = document.createElement("div");
+			c.classList.add("reply");
+			c.appendChild(getFullMessageElement(channel, rm));
+			mi.appendChild(c);
+			
+			var m = document.createElement("div");
+
+			var ts = document.createElement("span");
+			ts.classList.add("time");
+			var t = new Date(pm.time);
+			ts.innerText = t.getHours() + ":" + String(t.getMinutes()).padStart(2, '0');
+			m.appendChild(ts);
+
+			m.innerText += " Message from " + rm.displayName() + " was deleted";
+			mi.appendChild(m);
+			
+			channel.timeline.appendChild(mi);
+
+			mi.onclick = (ev) => {
+				const ri = document.getElementById("message#" + mid);
+				if (ri) {
+					ri.scrollIntoView({ behavior: 'smooth', block: 'center' });
+					ri.classList.add('highlight');
+					setTimeout(() => {
+						ri.classList.remove('highlight');
+					}, 1000);
+					ev.preventDefault();
+				}
+			};
+		}
+		return;
+	}
+
+	if (["PRIVMSG", "USERNOTICE"].indexOf(pm.command.command) == -1) return;
+
 
 	if (pm.content[pm.content.length - 1] == '\r')
 		pm.content = pm.content.substring(0, pm.content.length - 1);
@@ -289,6 +339,9 @@ function processMessage(pm) {
 	mi.classList.add("message");
 	mi.id = "message#" + pm.tags.id;
 
+	// Recent messages deleted tag
+	if(pm.tags["rm-deleted"])
+		mi.classList.add("deleted");
 
 	// Sub messages, raids
 	if (pm.command.command == "USERNOTICE") {
@@ -337,7 +390,7 @@ function processMessage(pm) {
 		}
 	}
 
-	messagesById[pm.tags.id] = pm;
+	messagesById[Number(pm.tags.id)] = pm;
 
 	var mentioned = false;
 
