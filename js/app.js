@@ -330,7 +330,6 @@ function processMessage(pm) {
 		if(me) me.classList.add("deleted");
 		
 		var rm = messagesById[Number(mid)] ?? pm;
-		console.log("Deleted");
 
 		{
 			var mi = document.createElement("div");
