@@ -634,6 +634,8 @@ class HChatChannel {
 
 				// Workaround around Twitch using UTF-16
 				var name = [...msg.content].slice(start, end + 1).join('');
+				console.log(name);
+				console.log(msg.content);
 
 				var e = new EmoteInfo();
 				e.id = id;

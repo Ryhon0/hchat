@@ -404,9 +404,9 @@ function processMessage(pm) {
 		// Remove @mention
 		var replyLogin = pm.tags["reply-parent-user-login"];
 		if (pm.content.startsWith("ACTION") && pm.content[pm.content.length - 1] == "") {
-			pm.content = "ACTION" + pm.content.substring("ACTION".length + 2 + replyLogin.length);
+			pm.tcontent = "ACTION" + pm.content.substring("ACTION".length + 2 + replyLogin.length);
 		}
-		else pm.content = pm.content.substring(2 + replyLogin.length);
+		else pm.tcontent = pm.content.substring(2 + replyLogin.length);
 
 		var rm = messagesById[replyId];
 		if (!rm) {
@@ -546,7 +546,7 @@ function getBadgeElement(channel, pm) {
 function getMessageComponentsElement(channel, pm, mentionCb = undefined) {
 	var ms = document.createElement("span");
 
-	var comps = channel.hchannel.foldMessageComponents(channel.hchannel.parseMessageComponents(pm.content, pm));
+	var comps = channel.hchannel.foldMessageComponents(channel.hchannel.parseMessageComponents(pm.tcontent ?? pm.content, pm));
 	for (c of comps) {
 		if (c instanceof Emote) {
 			const info = c.info;
@@ -656,7 +656,7 @@ function getFullMessageElement(channel, pm, mentionCb = undefined) {
 			mi.style.color = namecolor;
 		}
 		mi.classList.add("action");
-		pm.content = pm.content.substring("ACTION".length, pm.content.length - 1);
+		pm.tcontent = pm.content.substring("ACTION".length, pm.content.length - 1);
 	}
 
 	// Badges
