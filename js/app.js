@@ -23,15 +23,6 @@ async function selfUpdate()
 {
 	console.log("Checking for update...");
 
-	var scriptSources = [];
-
-	var scripts = document.getElementsByTagName("script");
-	for(var s of scripts)
-	{
-		if(s.src)
-			scriptSources.push(s.src);
-	}
-
 	var cached = await fetch("/js/app.js", {
 		cache: 'force-cache'
 	});
@@ -48,10 +39,21 @@ async function selfUpdate()
 	if(freshDate > cachedDate)
 	{
 		console.log("Updating scripts...");
-
-		for(var s of scriptSources)
+		for(var s of document.getElementsByTagName("script"))
 		{
-			await fetch(s, { cache: 'reload' });
+			if(s.src)
+			{
+				await fetch(s.src, { cache: 'reload' });
+			}
+		}
+
+		console.log("Updating styles...");
+		for(var l of document.getElementsByTagName("link"))
+		{
+			if(l.rel == "stylesheet")
+			{
+				await fetch(s.href, { cache: 'reload' });
+			}
 		}
 
 		location.reload();
