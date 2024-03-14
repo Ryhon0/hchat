@@ -450,7 +450,7 @@ function processMessage(pm) {
 		}
 		else pm.tcontent = pm.content.substring(2 + replyLogin.length);
 
-		var rm = messagesById[replyId];
+		var rm = messagesById[Number(replyId)];
 		if (!rm) {
 			rm = new Message();
 			rm.content = pm.tags["reply-parent-msg-body"];
