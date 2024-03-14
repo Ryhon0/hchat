@@ -23,14 +23,19 @@ var tooltip;
 async function selfUpdate() {
 	console.log("Checking for update...");
 
-	var cached = await fetch("/js/app.js", {
-		cache: 'force-cache'
-	});
+	var cachedDate = localStorage.getItem("lastUpdated");
+	if(!cachedDate)
+	{
+		var cached = await fetch("/js/app.js", {
+			cache: 'force-cache'
+		});
+		cachedDate = cached.headers.get("Last-Modified")
+	}
+	cachedDate = new Date(cachedDate);
+
 	var fresh = await fetch("/js/app.js", {
 		cache: 'reload'
 	});
-
-	var cachedDate = new Date(cached.headers.get("Last-Modified"));
 	var freshDate = new Date(fresh.headers.get("Last-Modified"));
 
 	console.log("Cached date: " + cachedDate);
@@ -51,6 +56,7 @@ async function selfUpdate() {
 			}
 		}
 
+		localStorage.setItem("lastUpdated", freshDate.toGMTString());
 		location.reload();
 	}
 }
