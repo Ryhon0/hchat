@@ -62,6 +62,7 @@ async function selfUpdate() {
 }
 
 async function loaded() {
+	loadSettings();
 	selfUpdate().then(() => { });
 
 	accounts = loadSavedAccounts();
@@ -200,6 +201,7 @@ async function loaded() {
 		popup.style.left = (btnRect.right - popupRect.width) + "px";
 	}
 	currentAccountAvatar = document.getElementById("currentAccountAvatar");
+	document.getElementById("settingsButton").onclick = openSettings;
 
 	var uploadButton = document.getElementById("uploadButton");
 	uploadButton.onclick = () => {
@@ -1007,13 +1009,10 @@ async function openChannelTab(name, id = undefined) {
 	channels.push(ch);
 
 	anonClient.join(ch.name.toLowerCase());
-	ch.timeline.classList.add("hidden");
-	tlbox.appendChild(ch.timeline);
 
 	const page = ch.timeline;
+	page.channel = ch;
 	const tab = document.createElement("button");
-	page.tab = tab;
-	tab.page = page;
 
 	{
 		tab.innerText = ch.name;
@@ -1026,16 +1025,14 @@ async function openChannelTab(name, id = undefined) {
 		tab.appendChild(closeButton);
 
 		channelList.appendChild(tab);
-
-		if (!selectedChannel) {
-			tab.click();
-		}
 	}
+
+	addPage(tab,page);
 
 	ch.hchannel.init().then(async () => {
 		ch.hchannel.getChannelCheermotes().then(() => { });
 
-		var msg = await new RecentMessagesAPI().getRecentMessages(ch.name.toLowerCase(), 800);
+		var msg = await new RecentMessagesAPI().getRecentMessages(ch.name.toLowerCase(), settings.recentMessagesLimit);
 		if (!msg.erorr) {
 			for (var m of msg.messages) {
 				processMessage(parseMessage(m));
@@ -1112,27 +1109,6 @@ async function openChannelChat(name, id = undefined) {
 	ch.timeline.classList.add("timeline");
 	ch.hchannel = new HChatChannel(hchat, ch.id);
 	return ch;
-}
-
-function switchTab(page) {
-	selectedChannel = undefined;
-
-	if (tlbox.children.length == 1) {
-		tlbox.children[0].classList.remove("hidden");
-		return;
-	}
-
-	for (var b of channelList.children) {
-		b.classList.remove("active");
-		if (b.page == page)
-			b.classList.add("active");
-	}
-
-	for (var p of tlbox.children) {
-		p.classList.add("hidden");
-		if (p == page)
-			p.classList.remove("hidden");
-	}
 }
 
 function sendMessage(msg) {
@@ -1266,7 +1242,13 @@ function uploadFile(f) {
 			selectedChannel.timeline.appendChild(b);
 		}
 
-		var r = await new Uploader().upload(new Blob([fr.result], { type: f.type }), f.name);
+		var uploader = new Uploader();
+		uploader.url = settings.uploaderUrl;
+		uploader.field = settings.uploaderField;
+		uploader.linkFormat = settings.uploaderLinkFormat;
+		uploader.deleteFormat = settings.uploaderDeleteFormat;
+
+		var r = await uploader.upload(new Blob([fr.result], { type: f.type }), f.name);
 		if (r.link) {
 			{
 				var b = document.createElement("div");
@@ -1300,4 +1282,199 @@ function uploadFile(f) {
 			}
 		}
 	};
+}
+
+var currentPage;
+function addPage(tab, page)
+{
+	tab.page = page;
+	page.tab = tab;
+
+	channelList.appendChild(tab);
+	tlbox.appendChild(page);
+
+	page.classList.add("hidden");
+
+	if(!currentPage)
+		switchTab(page);
+}
+
+function switchTab(page) {
+	currentPage = page;
+	selectedChannel = page.channel;
+
+	if(selectedChannel)
+		textInput.parentElement.style.display = "flex";
+	else textInput.parentElement.style.display = "none";
+
+
+	if (tlbox.children.length == 1) {
+		tlbox.children[0].classList.remove("hidden");
+		return;
+	}
+
+	for (var p of tlbox.children) {
+		if (p == page)
+		{
+			p.classList.remove("hidden");
+			if(p.tab)
+				p.tab.classList.add("active");
+		}
+		else 
+		{
+			p.classList.add("hidden");
+			if(p.tab)
+				p.tab.classList.remove("active");
+		}
+	}
+
+	if(page.tab)
+	{
+		page.tab.scrollIntoView({ behavior: 'smooth', block: 'center' });
+	}
+}
+
+var settingsPage;
+function openSettings()
+{
+	if(settingsPage)
+	{
+		switchTab(settingsPage);
+		return;
+	}
+
+	settingsPage = document.createElement("div");
+	var tab = document.createElement("button");
+	tab.innerText = "Settings";
+	tab.onclick = () => { switchTab(settingsPage); };
+
+	addPage(tab, settingsPage);
+	switchTab(settingsPage);
+
+	// Content
+	{
+		function createElementWithText(type, text)
+		{
+			var e = document.createElement(type)
+			e.innerText = text;
+			return e;
+		}
+
+		function createCheckbox(key, text)
+		{
+			const d = document.createElement("div");
+
+			const cb = document.createElement("input");
+			cb.id = "setting-" + key;
+			cb.type = "checkbox";
+			cb.checked = settings[key];
+			
+			cb.onchange = () => { settings[key] = cb.checked; saveSettings(); };
+			
+			const l = document.createElement("label");
+			l.innerText = text;
+			l.for = cb.id;
+
+			d.appendChild(cb);
+			d.appendChild(l);
+
+			return d;
+		}
+
+		function createNumberInput(key, text, min, max, step = 1)
+		{
+			const d = document.createElement("div");
+
+			const ni = document.createElement("input");
+			ni.id = "setting-" + key;
+			ni.type = "number";
+			ni.min = min;
+			ni.max = max;
+			ni.step = step;
+			ni.value = settings[key];
+			ni.oninput = () => { 
+				var val = ni.value;
+				if(val < min)
+				{
+					val = min;
+					ni.value = val;
+				}
+				else if(val > max)
+				{
+					val = max;
+					ni.value = val;
+				}
+
+				settings[key] = ni.value;
+				saveSettings();
+			};
+			
+			const l = document.createElement("label");
+			l.innerText = text;
+			l.for = ni.id;
+			
+			d.appendChild(ni);
+			d.appendChild(l);
+
+			return d;
+		}
+
+		function createTextbox(key, text)
+		{
+			const d = document.createElement("div");
+
+			const tb = document.createElement("input");
+			tb.id = "setting-" + key;
+			tb.value = settings[key];
+			
+			tb.onchange = () => { settings[key] = tb.value; saveSettings(); };
+			
+			const l = document.createElement("label");
+			l.innerText = text;
+			l.for = tb.id;
+
+			d.appendChild(tb);
+			d.appendChild(l);
+
+			return d;
+		}
+
+		{
+			settingsPage.appendChild(createElementWithText("h1", "Settings"));
+
+			settingsPage.appendChild(createElementWithText("h2", "Recent messages"));
+			settingsPage.appendChild(createNumberInput("recentMessagesLimit", "Recent messages limit", 0, 900));
+			
+			settingsPage.appendChild(createElementWithText("h2", "File uploader"));
+			settingsPage.appendChild(createTextbox("uploaderUrl", "Upload URL"));	
+			settingsPage.appendChild(createTextbox("uploaderField", "File field"));	
+			settingsPage.appendChild(createTextbox("uploaderLinkFormat", "Link format"));	
+			settingsPage.appendChild(createTextbox("uploaderDeleteFormat", "Delete format"));	
+		}
+	}
+}
+
+class Settings
+{
+	recentMessagesLimit = 900
+
+	uploaderUrl = "https://kappa.lol/api/upload"
+	uploaderField = "file"
+	// uploaderHeaders
+	uploaderLinkFormat = "{link}"
+	uploaderDeleteFormat = "{delete}"
+}
+var settings = new Settings();
+
+function saveSettings()
+{
+	localStorage.setItem("settings", JSON.stringify(settings));
+}
+
+function loadSettings()
+{
+	var s = localStorage.getItem("settings");
+	if(!s) return;
+
+	settings = JSON.parse(s);
 }

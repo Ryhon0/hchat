@@ -1,6 +1,6 @@
 class Uploader
 {
-	url = "https://femboy.beauty/api/upload"
+	url = "https://kappa.lol/api/upload"
 	field = "file"
 	headers
 	linkFormat = "{link}"
