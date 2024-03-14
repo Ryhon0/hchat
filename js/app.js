@@ -15,6 +15,7 @@ var tlbox;
 var channelList;
 var accountButton;
 var currentAccountAvatar;
+var dropZone;
 
 /** @type { Element } */
 var tooltip;
@@ -199,7 +200,8 @@ async function loaded() {
 		var fi = document.createElement("input");
 		fi.type = "file";
 		fi.addEventListener("change", () => {
-			uploadFiles(fi.files);
+			for(const f of fi.files)
+				uploadFile(f);
 		});
 		fi.click();
 	};
@@ -207,8 +209,62 @@ async function loaded() {
 	onAccountChanged();
 
 	document.onpaste = (ev) => {
-		uploadFiles(ev.clipboardData.files);
+		if (ev.clipboardData.files && ev.clipboardData.files.length) {
+			for(const f of ev.clipboardData.files)
+				uploadFile(f);
+			ev.preventDefault();
+		}
 	};
+
+	// File drag and drop
+	{
+		dropZone = document.getElementById("dropZone");
+
+		function showDropZone() {
+			dropZone.style.display = "flex";
+		}
+		function hideDropZone() {
+			dropZone.style.display = "none";
+		}
+
+		function allowDrag(e) {
+			if (true) {
+				e.dataTransfer.dropEffect = 'copy';
+				e.preventDefault();
+			}
+		}
+
+		/**
+		 * @param { DragEvent } e 
+		 */
+		function handleDrop(e) {
+			e.preventDefault();
+			hideDropZone();
+
+			if (e.dataTransfer.items) {
+				for (const i of e.dataTransfer.items) {
+					if (i.kind != "file") continue;
+
+					const f = i.getAsFile();
+					uploadFile(f);
+				}
+			}
+		}
+
+		window.addEventListener('dragenter', function (e) {
+			showDropZone();
+		});
+
+		dropZone.addEventListener('dragenter', allowDrag);
+		dropZone.addEventListener('dragover', allowDrag);
+
+		dropZone.addEventListener('dragleave', function (e) {
+			console.log('dragleave');
+			hideDropZone();
+		});
+
+		dropZone.addEventListener('drop', handleDrop);
+	}
 
 	textInput.addEventListener("keydown", (ev) => {
 		if (ev.keyCode == 13) {
@@ -1192,53 +1248,49 @@ function onAccountChanged() {
 }
 
 /**
- * @param { FileList } fi 
+ * @param { File } f
  */
-function uploadFiles(fi) {
-	if (fi.length != 1) return;
-
+function uploadFile(f) {
 	const fr = new FileReader();
-	for (var f of fi) {
-		fr.readAsArrayBuffer(f);
-		fr.onload = async () => {
+	fr.readAsArrayBuffer(f);
+	fr.onload = async () => {
+		{
+			var b = document.createElement("div");
+			b.innerText = "Uploading " + f.name + "...";
+			selectedChannel.timeline.appendChild(b);
+		}
+
+		var r = await new Uploader().upload(new Blob([fr.result], { type: f.type }), f.name);
+		if (r.link) {
 			{
 				var b = document.createElement("div");
-				b.innerText = "Uploading " + f.name + "...";
+				b.innerText = "File uploaded to ";
+
+				var a = document.createElement("a");
+				a.href = r.link;
+				a.innerText = r.link;
+				a.target = "_blank";
+
+				b.appendChild(a);
 				selectedChannel.timeline.appendChild(b);
 			}
 
-			var r = await new Uploader().upload(new Blob([fr.result], { type: f.type }), f.name);
-			if (r.link) {
-				{
-					var b = document.createElement("div");
-					b.innerText = "File uploaded to ";
+			if (textInput.value && textInput.value[textInput.value.length - 1] != ' ') {
+				textInput.value += ' ';
+			}
+			textInput.value += r.link;
 
-					var a = document.createElement("a");
-					a.href = r.link;
-					a.innerText = r.link;
-					a.target = "_blank";
+			if (r.delete) {
+				var b = document.createElement("div");
+				b.innerText = "Delete link: ";
 
-					b.appendChild(a);
-					selectedChannel.timeline.appendChild(b);
-				}
+				var a = document.createElement("a");
+				a.href = r.delete;
+				a.innerText = r.delete;
+				a.target = "_blank";
 
-				if (textInput.value && textInput.value[textInput.value.length - 1] != ' ') {
-					textInput.value += ' ';
-				}
-				textInput.value += r.link;
-
-				if (r.delete) {
-					var b = document.createElement("div");
-					b.innerText = "Delete link: ";
-
-					var a = document.createElement("a");
-					a.href = r.delete;
-					a.innerText = r.delete;
-					a.target = "_blank";
-
-					b.appendChild(a);
-					selectedChannel.timeline.appendChild(b);
-				}
+				b.appendChild(a);
+				selectedChannel.timeline.appendChild(b);
 			}
 		}
 	};

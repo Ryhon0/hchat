@@ -132,20 +132,19 @@ button {
 	word-wrap: break-word;
 }
 
-.timeline .reply
-{
+.timeline .reply {
 	font-size: 0.75em;
 	cursor: pointer;
 }
 
-.timeline .highlight
-{
+.timeline .highlight {
 	animation-name: replyHighlight;
 	animation-duration: 1s;
 	animation-play-state: running;
 }
 
 @keyframes replyHighlight {
+
 	0%,
 	50%,
 	100% {
@@ -250,34 +249,51 @@ button {
 	height: 1.25em;
 }
 
-.tooltip
-{
+.tooltip {
 	background-color: rgba(0, 0, 0, 0.75);
 	border-radius: 0.25em;
 	padding: 0.5em;
 	position: absolute;
 }
 
-.emoteTooltip
-{
+.emoteTooltip {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	text-align: center;
 }
 
-.emoteTooltip > img
-{
+.emoteTooltip>img {
 	height: 3em;
 }
 
-.message.deleted
-{
+.message.deleted {
 	opacity: 0.25;
 }
 
-.message.deletion
-{
+.message.deletion {
 	opacity: 0.5;
 	cursor: pointer;
+}
+
+#dropZone {
+	box-sizing: border-box;
+	display: none;
+	position: fixed;
+	width: 100%;
+	height: 100%;
+	left: 0;
+	top: 0;
+	z-index: 99999;
+	background: #000000c0;
+
+	flex-direction: column;
+	justify-content: center;
+    align-items: center;
+	gap: 0.75em;
+}
+
+#dropZone::before
+{
+	font-size: 3em;
 }
