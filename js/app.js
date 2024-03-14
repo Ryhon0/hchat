@@ -19,8 +19,7 @@ var currentAccountAvatar;
 /** @type { Element } */
 var tooltip;
 
-async function selfUpdate()
-{
+async function selfUpdate() {
 	console.log("Checking for update...");
 
 	var cached = await fetch("/js/app.js", {
@@ -32,26 +31,21 @@ async function selfUpdate()
 
 	var cachedDate = new Date(cached.headers.get("Last-Modified"));
 	var freshDate = new Date(fresh.headers.get("Last-Modified"));
-	
+
 	console.log("Cached date: " + cachedDate);
 	console.log("Fresh date: " + freshDate);
 
-	if(freshDate > cachedDate)
-	{
+	if (freshDate > cachedDate) {
 		console.log("Updating scripts...");
-		for(var s of document.getElementsByTagName("script"))
-		{
-			if(s.src)
-			{
+		for (var s of document.getElementsByTagName("script")) {
+			if (s.src) {
 				await fetch(s.src, { cache: 'reload' });
 			}
 		}
 
 		console.log("Updating styles...");
-		for(var l of document.getElementsByTagName("link"))
-		{
-			if(l.rel == "stylesheet")
-			{
+		for (var l of document.getElementsByTagName("link")) {
+			if (l.rel == "stylesheet") {
 				await fetch(s.href, { cache: 'reload' });
 			}
 		}
@@ -61,7 +55,7 @@ async function selfUpdate()
 }
 
 async function loaded() {
-	selfUpdate().then(()=>{});
+	selfUpdate().then(() => { });
 
 	accounts = loadSavedAccounts();
 
@@ -205,52 +199,16 @@ async function loaded() {
 		var fi = document.createElement("input");
 		fi.type = "file";
 		fi.addEventListener("change", () => {
-			if (fi.files.length != 1) return;
-
-			const fr = new FileReader();
-			var f = fi.files[0];
-			fr.readAsArrayBuffer(f);
-			fr.onload = async () => {
-				var r = await new Uploader().upload(new Blob([fr.result], { type: f.type }), f.name);
-				if (r.link) {
-					{
-						var b = document.createElement("div");
-						b.innerText = "File uploaded to ";
-
-						var a = document.createElement("a");
-						a.href = r.link;
-						a.innerText = r.link;
-						a.target = "_blank";
-
-						b.appendChild(a);
-						selectedChannel.timeline.appendChild(b);
-					}
-
-					if (textInput.value && textInput.value[textInput.value.length - 1] != ' ') {
-						textInput.value += ' ';
-					}
-					textInput.value += r.link;
-
-					if (r.delete) {
-						var b = document.createElement("div");
-						b.innerText = "Delete link: ";
-
-						var a = document.createElement("a");
-						a.href = r.delete;
-						a.innerText = r.delete;
-						a.target = "_blank";
-
-						b.appendChild(a);
-						selectedChannel.timeline.appendChild(b);
-					}
-				}
-			};
-
+			uploadFiles(fi.files);
 		});
 		fi.click();
 	};
 
 	onAccountChanged();
+
+	document.onpaste = (ev) => {
+		uploadFiles(ev.clipboardData.files);
+	};
 
 	textInput.addEventListener("keydown", (ev) => {
 		if (ev.keyCode == 13) {
@@ -324,25 +282,24 @@ function processMessage(pm) {
 		return;
 	}
 
-	if(pm.command.command == "CLEARMSG")
-	{
+	if (pm.command.command == "CLEARMSG") {
 		const mid = pm.tags["target-msg-id"];
-		
+
 		const me = document.getElementById("message#" + mid);
-		if(me) me.classList.add("deleted");
-		
+		if (me) me.classList.add("deleted");
+
 		var rm = messagesById[Number(mid)] ?? pm;
 
 		{
 			var mi = document.createElement("div");
 			mi.classList.add("message");
 			mi.classList.add("deletion");
-			
+
 			var c = document.createElement("div");
 			c.classList.add("reply");
 			c.appendChild(getFullMessageElement(channel, rm));
 			mi.appendChild(c);
-			
+
 			var m = document.createElement("div");
 
 			var ts = document.createElement("span");
@@ -353,7 +310,7 @@ function processMessage(pm) {
 
 			m.innerText += " Message from " + rm.displayName() + " was deleted";
 			mi.appendChild(m);
-			
+
 			channel.timeline.appendChild(mi);
 
 			mi.onclick = (ev) => {
@@ -382,7 +339,7 @@ function processMessage(pm) {
 	mi.id = "message#" + pm.tags.id;
 
 	// Recent messages deleted tag
-	if(pm.tags["rm-deleted"])
+	if (pm.tags["rm-deleted"])
 		mi.classList.add("deleted");
 
 	// Sub messages, raids
@@ -569,8 +526,7 @@ function getBadgeElement(channel, pm) {
 
 			tex.appendChild(timg);
 			tex.appendChild(document.createTextNode(ba.title));
-			if(ba.description && ba.description != ba.title)
-			{
+			if (ba.description && ba.description != ba.title) {
 				tex.appendChild(document.createElement("br"));
 				tex.appendChild(document.createTextNode(ba.description));
 			}
@@ -755,8 +711,7 @@ function showTooltip(parent, what) {
 	}
 
 	if (x < 0) x = 0;
-	if(x + tipBbox.width > document.documentElement.clientWidth)
-	{
+	if (x + tipBbox.width > document.documentElement.clientWidth) {
 		x = document.documentElement.clientWidth - tipBbox.width;
 	}
 
@@ -1234,4 +1189,57 @@ function onAccountChanged() {
 		currentAccountAvatar.style.display = "none";
 		accountButton.classList.add("bi-person");
 	}
+}
+
+/**
+ * @param { FileList } fi 
+ */
+function uploadFiles(fi) {
+	if (fi.length != 1) return;
+
+	const fr = new FileReader();
+	for (var f of fi) {
+		fr.readAsArrayBuffer(f);
+		fr.onload = async () => {
+			{
+				var b = document.createElement("div");
+				b.innerText = "Uploading " + f.name + "...";
+				selectedChannel.timeline.appendChild(b);
+			}
+
+			var r = await new Uploader().upload(new Blob([fr.result], { type: f.type }), f.name);
+			if (r.link) {
+				{
+					var b = document.createElement("div");
+					b.innerText = "File uploaded to ";
+
+					var a = document.createElement("a");
+					a.href = r.link;
+					a.innerText = r.link;
+					a.target = "_blank";
+
+					b.appendChild(a);
+					selectedChannel.timeline.appendChild(b);
+				}
+
+				if (textInput.value && textInput.value[textInput.value.length - 1] != ' ') {
+					textInput.value += ' ';
+				}
+				textInput.value += r.link;
+
+				if (r.delete) {
+					var b = document.createElement("div");
+					b.innerText = "Delete link: ";
+
+					var a = document.createElement("a");
+					a.href = r.delete;
+					a.innerText = r.delete;
+					a.target = "_blank";
+
+					b.appendChild(a);
+					selectedChannel.timeline.appendChild(b);
+				}
+			}
+		}
+	};
 }
