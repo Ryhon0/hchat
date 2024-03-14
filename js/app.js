@@ -1057,18 +1057,9 @@ function closeChannelTab(ch) {
 	channels = channels.filter((v) => v != ch);
 	saveChannels();
 
-	setTimeout(() => {
-		if (selectedChannel == ch) {
-			selectedChannel = undefined;
-
-			const newch = channels[0];
-			if (newch) {
-				// For some dumb reason this wouldn't work without the timeout
-				switchTab(selectedChannel.timeline);
-				selectedChannel = newch;
-			}
-		}
-	}, 0);
+	if (selectedChannel == ch) {
+		selectedChannel = undefined;
+	}
 }
 
 function saveChannels() {
@@ -1299,6 +1290,19 @@ function addPage(tab, page)
 		switchTab(page);
 }
 
+function removePage(page)
+{
+	if(page.tab)
+		page.tab.remove();
+
+	if(page == currentPage)
+	{
+		switchTab(tlbox.children[1] ?? tlbox.children[0]);
+	}
+
+	page.remove();
+}
+
 function switchTab(page) {
 	currentPage = page;
 	selectedChannel = page.channel;
@@ -1344,9 +1348,17 @@ function openSettings()
 	}
 
 	settingsPage = document.createElement("div");
+
 	var tab = document.createElement("button");
 	tab.innerText = "Settings";
 	tab.onclick = () => { switchTab(settingsPage); };
+
+	const closeButton = document.createElement("button");
+	closeButton.classList.add("closeButton");
+	closeButton.classList.add("bi-x-lg");
+	closeButton.onclick = () => { tab.remove(); settingsPage.remove(); settingsPage = undefined; };
+	tab.appendChild(closeButton);
+	channelList.appendChild(tab);
 
 	addPage(tab, settingsPage);
 	switchTab(settingsPage);
