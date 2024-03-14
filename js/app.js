@@ -51,7 +51,7 @@ async function selfUpdate() {
 		console.log("Updating styles...");
 		for (var l of document.getElementsByTagName("link")) {
 			if (l.rel == "stylesheet") {
-				await fetch(s.href, { cache: 'reload' });
+				await fetch(l.href, { cache: 'reload' });
 			}
 		}
 
