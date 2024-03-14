@@ -24,8 +24,7 @@ async function selfUpdate() {
 	console.log("Checking for update...");
 
 	var cachedDate = localStorage.getItem("lastUpdated");
-	if(!cachedDate)
-	{
+	if (!cachedDate) {
 		var cached = await fetch("/js/app.js", {
 			cache: 'force-cache'
 		});
@@ -140,6 +139,14 @@ async function loaded() {
 	sendButton = document.getElementById("sendButton");
 	tlbox = document.getElementById("tlbox");
 	channelList = document.getElementById("channelList");
+	channelList.addEventListener('wheel', (event) => {
+		if (!event.deltaY) {
+			return;
+		}
+
+		event.currentTarget.scrollLeft += event.deltaY + event.deltaX;
+		event.preventDefault();
+	});
 	document.getElementById("addChannelButton").onclick = async () => {
 		var name = prompt('Channel name:');
 		if (name) {
@@ -208,7 +215,7 @@ async function loaded() {
 		var fi = document.createElement("input");
 		fi.type = "file";
 		fi.addEventListener("change", () => {
-			for(const f of fi.files)
+			for (const f of fi.files)
 				uploadFile(f);
 		});
 		fi.click();
@@ -218,7 +225,7 @@ async function loaded() {
 
 	document.onpaste = (ev) => {
 		if (ev.clipboardData.files && ev.clipboardData.files.length) {
-			for(const f of ev.clipboardData.files)
+			for (const f of ev.clipboardData.files)
 				uploadFile(f);
 			ev.preventDefault();
 		}
@@ -1027,7 +1034,7 @@ async function openChannelTab(name, id = undefined) {
 		channelList.appendChild(tab);
 	}
 
-	addPage(tab,page);
+	addPage(tab, page);
 
 	ch.hchannel.init().then(async () => {
 		ch.hchannel.getChannelCheermotes().then(() => { });
@@ -1276,8 +1283,7 @@ function uploadFile(f) {
 }
 
 var currentPage;
-function addPage(tab, page)
-{
+function addPage(tab, page) {
 	tab.page = page;
 	page.tab = tab;
 
@@ -1286,17 +1292,15 @@ function addPage(tab, page)
 
 	page.classList.add("hidden");
 
-	if(!currentPage)
+	if (!currentPage)
 		switchTab(page);
 }
 
-function removePage(page)
-{
-	if(page.tab)
+function removePage(page) {
+	if (page.tab)
 		page.tab.remove();
 
-	if(page == currentPage)
-	{
+	if (page == currentPage) {
 		switchTab(tlbox.children[1] ?? tlbox.children[0]);
 	}
 
@@ -1307,7 +1311,7 @@ function switchTab(page) {
 	currentPage = page;
 	selectedChannel = page.channel;
 
-	if(selectedChannel)
+	if (selectedChannel)
 		textInput.parentElement.style.display = "flex";
 	else textInput.parentElement.style.display = "none";
 
@@ -1318,31 +1322,26 @@ function switchTab(page) {
 	}
 
 	for (var p of tlbox.children) {
-		if (p == page)
-		{
+		if (p == page) {
 			p.classList.remove("hidden");
-			if(p.tab)
+			if (p.tab)
 				p.tab.classList.add("active");
 		}
-		else 
-		{
+		else {
 			p.classList.add("hidden");
-			if(p.tab)
+			if (p.tab)
 				p.tab.classList.remove("active");
 		}
 	}
 
-	if(page.tab)
-	{
+	if (page.tab) {
 		page.tab.scrollIntoView({ behavior: 'smooth', block: 'center' });
 	}
 }
 
 var settingsPage;
-function openSettings()
-{
-	if(settingsPage)
-	{
+function openSettings() {
+	if (settingsPage) {
 		switchTab(settingsPage);
 		return;
 	}
@@ -1365,24 +1364,22 @@ function openSettings()
 
 	// Content
 	{
-		function createElementWithText(type, text)
-		{
+		function createElementWithText(type, text) {
 			var e = document.createElement(type)
 			e.innerText = text;
 			return e;
 		}
 
-		function createCheckbox(key, text)
-		{
+		function createCheckbox(key, text) {
 			const d = document.createElement("div");
 
 			const cb = document.createElement("input");
 			cb.id = "setting-" + key;
 			cb.type = "checkbox";
 			cb.checked = settings[key];
-			
+
 			cb.onchange = () => { settings[key] = cb.checked; saveSettings(); };
-			
+
 			const l = document.createElement("label");
 			l.innerText = text;
 			l.for = cb.id;
@@ -1393,8 +1390,7 @@ function openSettings()
 			return d;
 		}
 
-		function createNumberInput(key, text, min, max, step = 1)
-		{
+		function createNumberInput(key, text, min, max, step = 1) {
 			const d = document.createElement("div");
 
 			const ni = document.createElement("input");
@@ -1404,15 +1400,13 @@ function openSettings()
 			ni.max = max;
 			ni.step = step;
 			ni.value = settings[key];
-			ni.oninput = () => { 
+			ni.oninput = () => {
 				var val = ni.value;
-				if(val < min)
-				{
+				if (val < min) {
 					val = min;
 					ni.value = val;
 				}
-				else if(val > max)
-				{
+				else if (val > max) {
 					val = max;
 					ni.value = val;
 				}
@@ -1420,27 +1414,26 @@ function openSettings()
 				settings[key] = ni.value;
 				saveSettings();
 			};
-			
+
 			const l = document.createElement("label");
 			l.innerText = text;
 			l.for = ni.id;
-			
+
 			d.appendChild(ni);
 			d.appendChild(l);
 
 			return d;
 		}
 
-		function createTextbox(key, text)
-		{
+		function createTextbox(key, text) {
 			const d = document.createElement("div");
 
 			const tb = document.createElement("input");
 			tb.id = "setting-" + key;
 			tb.value = settings[key];
-			
+
 			tb.onchange = () => { settings[key] = tb.value; saveSettings(); };
-			
+
 			const l = document.createElement("label");
 			l.innerText = text;
 			l.for = tb.id;
@@ -1458,18 +1451,17 @@ function openSettings()
 
 			settingsPage.appendChild(createElementWithText("h2", "Recent messages"));
 			settingsPage.appendChild(createNumberInput("recentMessagesLimit", "Recent messages limit", 0, 900));
-			
+
 			settingsPage.appendChild(createElementWithText("h2", "File uploader"));
-			settingsPage.appendChild(createTextbox("uploaderUrl", "Upload URL"));	
-			settingsPage.appendChild(createTextbox("uploaderField", "File field"));	
-			settingsPage.appendChild(createTextbox("uploaderLinkFormat", "Link format"));	
-			settingsPage.appendChild(createTextbox("uploaderDeleteFormat", "Delete format"));	
+			settingsPage.appendChild(createTextbox("uploaderUrl", "Upload URL"));
+			settingsPage.appendChild(createTextbox("uploaderField", "File field"));
+			settingsPage.appendChild(createTextbox("uploaderLinkFormat", "Link format"));
+			settingsPage.appendChild(createTextbox("uploaderDeleteFormat", "Delete format"));
 		}
 	}
 }
 
-class Settings
-{
+class Settings {
 	emoteSize = 3
 
 	recentMessagesLimit = 900
@@ -1482,16 +1474,14 @@ class Settings
 }
 var settings = new Settings();
 
-function saveSettings()
-{
+function saveSettings() {
 	localStorage.setItem("settings", JSON.stringify(settings));
 }
 
-function loadSettings()
-{
+function loadSettings() {
 	var s = localStorage.getItem("settings");
-	if(!s) return;
+	if (!s) return;
 
 	var j = JSON.parse(s);
-	settings = {...settings, ...j};
+	settings = { ...settings, ...j };
 }
