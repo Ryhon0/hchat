@@ -614,7 +614,7 @@ function getMessageComponentsElement(channel, pm, mentionCb = undefined) {
 			const info = c.info;
 
 			const img = document.createElement("img");
-			img.src = c.info.getImageURL(3);
+			img.src = c.info.getImageURL(settings.emoteSize);
 			img.alt = c.info.getName();
 
 			const imgspan = document.createElement("span");
@@ -628,7 +628,7 @@ function getMessageComponentsElement(channel, pm, mentionCb = undefined) {
 				tex.classList.add("emoteTooltip");
 
 				var timg = document.createElement("img");
-				timg.src = info.getImageURL(3);
+				timg.src = info.getImageURL(settings.emoteSize);
 				tex.appendChild(timg);
 				tex.appendChild(document.createTextNode(info.getName()));
 
@@ -638,7 +638,7 @@ function getMessageComponentsElement(channel, pm, mentionCb = undefined) {
 
 					for (ov of overlays) {
 						const timg = document.createElement("img");
-						timg.src = ov.info.getImageURL(3);
+						timg.src = ov.info.getImageURL(settings.emoteSize);
 						tex.appendChild(timg);
 						tex.appendChild(document.createTextNode(ov.info.getName()));
 					}
@@ -649,7 +649,7 @@ function getMessageComponentsElement(channel, pm, mentionCb = undefined) {
 
 			for (ov of overlays) {
 				const img = document.createElement("img");
-				img.src = ov.info.getImageURL(3);
+				img.src = ov.info.getImageURL(settings.emoteSize);
 				img.alt = c.info.getName();
 
 				imgspan.appendChild(img);
@@ -1454,6 +1454,8 @@ function openSettings()
 		{
 			settingsPage.appendChild(createElementWithText("h1", "Settings"));
 
+			settingsPage.appendChild(createNumberInput("emoteSize", "Emote resolution", 1, 4));
+
 			settingsPage.appendChild(createElementWithText("h2", "Recent messages"));
 			settingsPage.appendChild(createNumberInput("recentMessagesLimit", "Recent messages limit", 0, 900));
 			
@@ -1468,6 +1470,8 @@ function openSettings()
 
 class Settings
 {
+	emoteSize = 3
+
 	recentMessagesLimit = 900
 
 	uploaderUrl = "https://kappa.lol/api/upload"
@@ -1488,5 +1492,6 @@ function loadSettings()
 	var s = localStorage.getItem("settings");
 	if(!s) return;
 
-	settings = JSON.parse(s);
+	var j = JSON.parse(s);
+	settings = {...settings, ...j};
 }
