@@ -620,7 +620,7 @@ function getBadgeElement(channel, pm) {
 	for (const ba of blist) {
 		const bi = document.createElement("img");
 		bi.src = ba.img;
-		bi.alt = ba.title;
+		// bi.alt = ba.title;
 		bi.style.background = ba.backgroundStyle;
 		bl.appendChild(bi);
 
@@ -658,7 +658,7 @@ function getMessageComponentsElement(channel, pm, mentionCb = undefined) {
 
 			const img = document.createElement("img");
 			img.src = c.info.getImageURL(settings.emoteSize);
-			img.alt = c.info.getName();
+			// img.alt = c.info.getName();
 
 			const imgspan = document.createElement("span");
 			imgspan.classList.add("emote");
@@ -673,7 +673,10 @@ function getMessageComponentsElement(channel, pm, mentionCb = undefined) {
 				var timg = document.createElement("img");
 				timg.src = info.getImageURL(settings.emoteSize);
 				tex.appendChild(timg);
-				tex.appendChild(document.createTextNode(info.getName()));
+				if(info.provider != "emoji")
+					tex.appendChild(document.createTextNode(info.getName()));
+				else
+					tex.appendChild(document.createTextNode(info.name));
 
 				if (overlays.length) {
 					tex.appendChild(document.createElement("br"));
@@ -810,11 +813,11 @@ function showTooltip(parent, what) {
 	var parentBbox = parent.getBoundingClientRect();
 	var tipBbox = what.getBoundingClientRect();
 
-	var y = parentBbox.bottom + 4;
+	var y = parentBbox.bottom;
 	var x = (parentBbox.right - (parentBbox.width / 2)) - (tipBbox.width / 2)
 
 	if (y + tipBbox.height > document.documentElement.clientHeight) {
-		y = document.documentElement.clientHeight - tipBbox.height;
+		y = document.documentElement.clientHeight - tipBbox.height - 1;
 	}
 
 	if (x < 0) x = 0;

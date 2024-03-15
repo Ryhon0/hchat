@@ -261,6 +261,7 @@ button {
 	flex-direction: column;
 	align-items: center;
 	text-align: center;
+	max-width: 20em;
 }
 
 .emoteTooltip>img {
