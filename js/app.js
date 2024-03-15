@@ -359,7 +359,7 @@ function processMessage(pm) {
 		const me = document.getElementById("message#" + mid);
 		if (me) me.classList.add("deleted");
 
-		var rm = messagesById[Number(mid)] ?? pm;
+		var rm = messagesById[mid] ?? pm;
 
 		{
 			var mi = document.createElement("div");
@@ -460,7 +460,7 @@ function processMessage(pm) {
 		}
 	}
 
-	messagesById[Number(pm.tags.id)] = pm;
+	messagesById[pm.tags.id] = pm;
 
 	var mentioned = false;
 
@@ -478,7 +478,7 @@ function processMessage(pm) {
 		}
 		else pm.tcontent = pm.content.substring(2 + replyLogin.length);
 
-		var rm = messagesById[Number(replyId)];
+		var rm = messagesById[replyId];
 		if (!rm) {
 			rm = new Message();
 			rm.content = pm.tags["reply-parent-msg-body"];
