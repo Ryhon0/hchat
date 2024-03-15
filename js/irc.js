@@ -26,6 +26,11 @@ class Message {
 	{
 		return Number(this.tags["room-id"]);
 	}
+
+	messageId()
+	{
+		return this.tags.id;
+	}
 }
 
 function parseMessage(message) {

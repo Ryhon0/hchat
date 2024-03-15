@@ -344,7 +344,7 @@ var messagesById = {};
 /**
  * @param { Message } pm 
  */
-function processMessage(pm) {
+function processMessage(pm, historical = false) {
 	if (!pm || !pm.command) return;
 
 	var channel = getChannelById(pm.roomId());
@@ -382,7 +382,11 @@ function processMessage(pm) {
 			m.innerText += " Message from " + rm.displayName() + " was deleted";
 			mi.appendChild(m);
 
-			channel.timeline.appendChild(mi);
+			if(!historical && channel.timeline.firstChild)
+				channel.timeline.appendChild(mi);
+			else
+				channel.timeline.insertBefore(mi, channel.timeline.firstChild);
+			maintainMessageLimit(channel.timeline);
 
 			mi.onclick = (ev) => {
 				const ri = document.getElementById("message#" + mid);
@@ -408,6 +412,7 @@ function processMessage(pm) {
 	var mi = document.createElement("div");
 	mi.classList.add("message");
 	mi.id = "message#" + pm.tags.id;
+	mi.message = pm;
 
 	// Recent messages deleted tag
 	if (pm.tags["rm-deleted"])
@@ -428,7 +433,12 @@ function processMessage(pm) {
 					var li = document.createElement("li");
 					li.classList.add("sub");
 					li.innerText = text;
-					channel.timeline.appendChild(li);
+					if(!historical && channel.timeline.firstChild)
+						channel.timeline.appendChild(li);
+					else
+						channel.timeline.insertBefore(li, channel.timeline.firstChild);
+
+					maintainMessageLimit(channel.timeline);
 				}
 
 				if (pm.command.channel) {
@@ -440,13 +450,17 @@ function processMessage(pm) {
 				var raidFrom = pm.tags["msg-param-displayName"];
 				var raidFromId = pm.tags["user-id"];
 
-				console.log(pm);
 				{
 					var text = pm.tags["system-msg"];
 					var li = document.createElement("li");
 					li.classList.add("raid");
 					li.innerText = text.replace("\n", "");
-					channel.timeline.appendChild(li);
+					
+					if(!historical && channel.timeline.firstChild)
+						channel.timeline.appendChild(li);
+					else
+						channel.timeline.insertBefore(li, channel.timeline.firstChild);
+					maintainMessageLimit(channel.timeline);
 				}
 				if (pm.command.channel) {
 					mi.classList.add("raid");
@@ -460,7 +474,7 @@ function processMessage(pm) {
 		}
 	}
 
-	messagesById[pm.tags.id] = pm;
+	messagesById[pm.messageId()] = pm;
 
 	var mentioned = false;
 
@@ -569,7 +583,29 @@ function processMessage(pm) {
 		}
 	}
 
-	channel.timeline.appendChild(mi);
+	if(!historical && channel.timeline.firstChild)
+		channel.timeline.appendChild(mi);
+	else
+		channel.timeline.insertBefore(mi, channel.timeline.firstChild);
+	maintainMessageLimit(channel.timeline);
+}
+
+/**
+ * @param { Element } tl 
+ */
+function maintainMessageLimit(tl) {
+	var children = Array.from(tl.children);
+	if (children.length > settings.maxMessages) {
+		var delta = children.length - settings.maxMessages;
+
+		var toDelete = children.slice(0, delta);
+
+		for (var m of toDelete) {
+			var mo = m.message;
+			if (mo) delete messagesById[mo.messageId()];
+			m.remove();
+		}
+	}
 }
 
 /**
@@ -1041,8 +1077,8 @@ async function openChannelTab(name, id = undefined) {
 
 		var msg = await new RecentMessagesAPI().getRecentMessages(ch.name.toLowerCase(), settings.recentMessagesLimit);
 		if (!msg.erorr) {
-			for (var m of msg.messages) {
-				processMessage(parseMessage(m));
+			for (var m of msg.messages.reverse()) {
+				processMessage(parseMessage(m), true);
 			}
 		}
 		else {
@@ -1447,6 +1483,7 @@ function openSettings() {
 		{
 			settingsPage.appendChild(createElementWithText("h1", "Settings"));
 
+			settingsPage.appendChild(createNumberInput("maxMessages", "Max messages", 50, Infinity));
 			settingsPage.appendChild(createNumberInput("emoteSize", "Emote resolution", 1, 4));
 
 			settingsPage.appendChild(createElementWithText("h2", "Recent messages"));
@@ -1463,6 +1500,8 @@ function openSettings() {
 
 class Settings {
 	emoteSize = 3
+
+	maxMessages = 1000
 
 	recentMessagesLimit = 900
 
