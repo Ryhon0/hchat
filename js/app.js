@@ -137,6 +137,7 @@ async function loaded() {
 
 	textInput = document.getElementById("textInput");
 	sendButton = document.getElementById("sendButton");
+
 	tlbox = document.getElementById("tlbox");
 	channelList = document.getElementById("channelList");
 	channelList.addEventListener('wheel', (event) => {
@@ -147,6 +148,18 @@ async function loaded() {
 		event.currentTarget.scrollLeft += event.deltaY + event.deltaX;
 		event.preventDefault();
 	});
+	channelTabber = new Tabber(channelList, tlbox);
+	channelTabber.onPageSwitched = (page) => {
+		selectedChannel = page.channel;
+
+		closeEmojiList();
+
+		if (selectedChannel)
+			textInput.parentElement.classList.remove("hidden");
+		else
+			textInput.parentElement.classList.add("hidden");
+	};
+
 	document.getElementById("addChannelButton").onclick = async () => {
 		var name = prompt('Channel name:');
 		if (name) {
@@ -221,7 +234,33 @@ async function loaded() {
 		fi.click();
 	};
 
-	onAccountChanged();
+	document.getElementById("emojiButton").onclick = () => {
+		var list = document.getElementById("emojiList");
+
+		if (list.classList.contains("hidden")) {
+			openEmojiList();
+		}
+		else {
+			closeEmojiList();
+		}
+	};
+	emoteTabber = new Tabber(document.getElementById("emoteTabs"), document.getElementById("emotePages"));
+	emoteTabber.onPageClosed = (page) => { page.innerHTML = "" };
+	emoteTabber.onPageSwitched = (page) => 
+	{
+		for (var ek in page.list) {
+			const ei = page.list[ek];
+			var e = new Emote();
+			e.info = ei;
+
+			var ee = createEmoteElement(e);
+			ee.onclick = (ev) => 
+			{
+				pushInputText(ev.currentTarget.emote.info.getName());
+			}
+			page.appendChild(ee);
+		}
+	}
 
 	document.onpaste = (ev) => {
 		if (ev.clipboardData.files && ev.clipboardData.files.length) {
@@ -230,6 +269,8 @@ async function loaded() {
 			ev.preventDefault();
 		}
 	};
+
+	onAccountChanged();
 
 	// File drag and drop
 	{
@@ -382,7 +423,7 @@ function processMessage(pm, historical = false) {
 			m.innerText += " Message from " + rm.displayName() + " was deleted";
 			mi.appendChild(m);
 
-			if(!historical && channel.timeline.firstChild)
+			if (!historical && channel.timeline.firstChild)
 				channel.timeline.appendChild(mi);
 			else
 				channel.timeline.insertBefore(mi, channel.timeline.firstChild);
@@ -433,7 +474,7 @@ function processMessage(pm, historical = false) {
 					var li = document.createElement("li");
 					li.classList.add("sub");
 					li.innerText = text;
-					if(!historical && channel.timeline.firstChild)
+					if (!historical && channel.timeline.firstChild)
 						channel.timeline.appendChild(li);
 					else
 						channel.timeline.insertBefore(li, channel.timeline.firstChild);
@@ -455,8 +496,8 @@ function processMessage(pm, historical = false) {
 					var li = document.createElement("li");
 					li.classList.add("raid");
 					li.innerText = text.replace("\n", "");
-					
-					if(!historical && channel.timeline.firstChild)
+
+					if (!historical && channel.timeline.firstChild)
 						channel.timeline.appendChild(li);
 					else
 						channel.timeline.insertBefore(li, channel.timeline.firstChild);
@@ -583,7 +624,7 @@ function processMessage(pm, historical = false) {
 		}
 	}
 
-	if(!historical && channel.timeline.firstChild)
+	if (!historical && channel.timeline.firstChild)
 		channel.timeline.appendChild(mi);
 	else
 		channel.timeline.insertBefore(mi, channel.timeline.firstChild);
@@ -654,54 +695,7 @@ function getMessageComponentsElement(channel, pm, mentionCb = undefined) {
 	var comps = channel.hchannel.foldMessageComponents(channel.hchannel.parseMessageComponents(pm.tcontent ?? pm.content, pm));
 	for (c of comps) {
 		if (c instanceof Emote) {
-			const info = c.info;
-
-			const img = document.createElement("img");
-			img.src = c.info.getImageURL(settings.emoteSize);
-			// img.alt = c.info.getName();
-
-			const imgspan = document.createElement("span");
-			imgspan.classList.add("emote");
-			imgspan.appendChild(img);
-
-			const overlays = c.overlays;
-
-			imgspan.onmouseover = () => {
-				var tex = document.createElement("div");
-				tex.classList.add("emoteTooltip");
-
-				var timg = document.createElement("img");
-				timg.src = info.getImageURL(settings.emoteSize);
-				tex.appendChild(timg);
-				if(info.provider != "emoji")
-					tex.appendChild(document.createTextNode(info.getName()));
-				else
-					tex.appendChild(document.createTextNode(info.name));
-
-				if (overlays.length) {
-					tex.appendChild(document.createElement("br"));
-					tex.appendChild(document.createTextNode("Overlays:"));
-
-					for (ov of overlays) {
-						const timg = document.createElement("img");
-						timg.src = ov.info.getImageURL(settings.emoteSize);
-						tex.appendChild(timg);
-						tex.appendChild(document.createTextNode(ov.info.getName()));
-					}
-				}
-
-				showTooltip(imgspan, tex);
-			};
-
-			for (ov of overlays) {
-				const img = document.createElement("img");
-				img.src = ov.info.getImageURL(settings.emoteSize);
-				img.alt = c.info.getName();
-
-				imgspan.appendChild(img);
-			}
-
-			ms.appendChild(imgspan);
+			ms.appendChild(createEmoteElement(c));
 		}
 		else if (c instanceof Link) {
 			var a = document.createElement("a");
@@ -790,6 +784,67 @@ function getFullMessageElement(channel, pm, mentionCb = undefined) {
 	mi.appendChild(comps);
 
 	return mi;
+}
+
+/**
+ * @param { Emote } e 
+ */
+function createEmoteElement(c) {
+	var info = c.info;
+
+	const img = document.createElement("img");
+	img.src = c.info.getImageURL(settings.emoteSize);
+	img.loading = "lazy";
+	// img.alt = c.info.getName();
+
+	const imgspan = document.createElement("span");
+	imgspan.emote = c;
+	imgspan.classList.add("emote");
+	imgspan.appendChild(img);
+
+	var overlays = c.overlays;
+
+	imgspan.onmouseover = (ev) => {
+		const c = ev.currentTarget.emote;
+		const info = c.info;
+		const overlays = c.overlays;
+
+		var tex = document.createElement("div");
+		tex.classList.add("emoteTooltip");
+
+		var timg = document.createElement("img");
+		timg.src = info.getImageURL(settings.emoteSize);
+		tex.appendChild(timg);
+		if (info.provider != "emoji")
+			tex.appendChild(document.createTextNode(info.getName()));
+		else
+			tex.appendChild(document.createTextNode(info.name));
+
+		if (overlays.length) {
+			tex.appendChild(document.createElement("br"));
+			tex.appendChild(document.createTextNode("Overlays:"));
+
+			for (ov of overlays) {
+				const timg = document.createElement("img");
+				timg.src = ov.info.getImageURL(settings.emoteSize);
+				tex.appendChild(timg);
+				tex.appendChild(document.createTextNode(ov.info.getName()));
+			}
+		}
+
+		showTooltip(imgspan, tex);
+	};
+
+	for (ov of overlays) {
+		const img = document.createElement("img");
+		img.loading = "lazy";
+		img.src = ov.info.getImageURL(settings.emoteSize);
+		img.alt = c.info.getName();
+
+		imgspan.appendChild(img);
+	}
+
+	return imgspan;
 }
 
 function authRedirect() {
@@ -1062,7 +1117,6 @@ async function openChannelTab(name, id = undefined) {
 
 	{
 		tab.innerText = ch.name;
-		tab.onclick = () => { switchTab(ch.timeline); selectedChannel = ch; };
 
 		const closeButton = document.createElement("button");
 		closeButton.classList.add("closeButton");
@@ -1073,7 +1127,7 @@ async function openChannelTab(name, id = undefined) {
 		channelList.appendChild(tab);
 	}
 
-	addPage(tab, page);
+	channelTabber.addPage(tab, page);
 
 	ch.hchannel.init().then(async () => {
 		ch.hchannel.getChannelCheermotes().then(() => { });
@@ -1093,19 +1147,12 @@ async function openChannelTab(name, id = undefined) {
 function closeChannelTab(ch) {
 	if (!ch) return;
 
-	var tab = ch.timeline.tab;
-	var page = ch.timeline;
+	channelTabber.removePage(ch.timeline);
 
-	tab.remove();
-	page.remove();
 	ch.close();
 
 	channels = channels.filter((v) => v != ch);
 	saveChannels();
-
-	if (selectedChannel == ch) {
-		selectedChannel = undefined;
-	}
 }
 
 function saveChannels() {
@@ -1300,10 +1347,7 @@ function uploadFile(f) {
 				selectedChannel.timeline.appendChild(b);
 			}
 
-			if (textInput.value && textInput.value[textInput.value.length - 1] != ' ') {
-				textInput.value += ' ';
-			}
-			textInput.value += r.link;
+			pushInputText(r.link);
 
 			if (r.delete) {
 				var b = document.createElement("div");
@@ -1319,63 +1363,6 @@ function uploadFile(f) {
 			}
 		}
 	};
-}
-
-var currentPage;
-function addPage(tab, page) {
-	tab.page = page;
-	page.tab = tab;
-
-	channelList.appendChild(tab);
-	tlbox.appendChild(page);
-
-	page.classList.add("hidden");
-
-	if (!currentPage)
-		switchTab(page);
-}
-
-function removePage(page) {
-	if (page.tab)
-		page.tab.remove();
-
-	if (page == currentPage) {
-		switchTab(tlbox.children[1] ?? tlbox.children[0]);
-	}
-
-	page.remove();
-}
-
-function switchTab(page) {
-	currentPage = page;
-	selectedChannel = page.channel;
-
-	if (selectedChannel)
-		textInput.parentElement.style.display = "flex";
-	else textInput.parentElement.style.display = "none";
-
-
-	if (tlbox.children.length == 1) {
-		tlbox.children[0].classList.remove("hidden");
-		return;
-	}
-
-	for (var p of tlbox.children) {
-		if (p == page) {
-			p.classList.remove("hidden");
-			if (p.tab)
-				p.tab.classList.add("active");
-		}
-		else {
-			p.classList.add("hidden");
-			if (p.tab)
-				p.tab.classList.remove("active");
-		}
-	}
-
-	if (page.tab) {
-		page.tab.scrollIntoView({ behavior: 'smooth', block: 'center' });
-	}
 }
 
 var settingsPage;
@@ -1394,21 +1381,15 @@ function openSettings() {
 	const closeButton = document.createElement("button");
 	closeButton.classList.add("closeButton");
 	closeButton.classList.add("bi-x-lg");
-	closeButton.onclick = () => { tab.remove(); settingsPage.remove(); settingsPage = undefined; };
+	closeButton.onclick = () => { channelTabber.removePage(settingsPage); settingsPage = undefined; };
 	tab.appendChild(closeButton);
 	channelList.appendChild(tab);
 
-	addPage(tab, settingsPage);
-	switchTab(settingsPage);
+	channelTabber.addPage(tab, settingsPage);
+	channelTabber.switchPage(settingsPage);
 
 	// Content
 	{
-		function createElementWithText(type, text) {
-			var e = document.createElement(type)
-			e.innerText = text;
-			return e;
-		}
-
 		function createCheckbox(key, text) {
 			const d = document.createElement("div");
 
@@ -1501,6 +1482,12 @@ function openSettings() {
 	}
 }
 
+function createElementWithText(type, text) {
+	var e = document.createElement(type)
+	e.innerText = text;
+	return e;
+}
+
 class Settings {
 	emoteSize = 3
 
@@ -1526,4 +1513,134 @@ function loadSettings() {
 
 	var j = JSON.parse(s);
 	settings = { ...settings, ...j };
+}
+
+class Tabber {
+	/** @type { Element } */
+	tabList
+	/** @type { Element } */
+	pageList
+	/** @type { Element } */
+	currentPage
+	onPageClosed = (page) => {}
+	onPageSwitched = (page) => { }
+
+	constructor(tabs, pages) {
+		this.tabList = tabs
+		this.pageList = pages
+	}
+
+	addPage(tab, page) {
+		tab.page = page;
+		page.tab = tab;
+
+		tab.onclick = () => {
+			this.switchPage(page);
+		};
+
+		this.tabList.appendChild(tab);
+		this.pageList.appendChild(page);
+
+		page.classList.add("hidden");
+
+		if (!this.currentPage)
+			this.switchPage(page);
+	}
+
+	removePage(page) {
+		if(page == this.currentPage)
+			this.currentPage = null;
+		
+		if (page.tab)
+			page.tab.remove();
+		
+		page.remove();
+	}
+
+	removeAllPages() {
+		for (var t of this.tabList.children) {
+			this.removePage(t.page);
+		}
+	}
+
+	switchPage(page) {
+		if(this.currentPage) this.onPageClosed(this.currentPage);
+
+		this.currentPage = page;
+		this.onPageSwitched(page);
+
+		for (var p of this.pageList.children) {
+			if (p == page) {
+				p.classList.remove("hidden");
+				if (p.tab)
+					p.tab.classList.add("active");
+			}
+			else {
+				p.classList.add("hidden");
+				if (p.tab)
+					p.tab.classList.remove("active");
+			}
+		}
+
+		if (page.tab) {
+			page.tab.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		}
+	}
+}
+/** @type { Tabber } */
+var channelTabber;
+/** @type { Tabber } */
+var emoteTabber;
+
+function openEmojiList() {
+	closeEmojiList();
+
+	var list = document.getElementById("emojiList");
+	tlbox.classList.add("hidden");
+
+	{
+		var btn = document.createElement("button");
+		btn.innerText = "Channel Emotes";
+
+		var page = document.createElement("div");
+		page.list = selectedChannel.hchannel.channelEmotes;
+		emoteTabber.addPage(btn, page);
+	}
+
+	{
+		var btn = document.createElement("button");
+		btn.innerText = "Global Emotes";
+
+		var page = document.createElement("div");
+		page.list = selectedChannel.hchannel.hchat.globalEmotes;
+		emoteTabber.addPage(btn, page);
+	}
+
+	{
+		var btn = document.createElement("button");
+		btn.innerText = "Emojis";
+
+		var page = document.createElement("div");
+		page.list = selectedChannel.hchannel.hchat.emojis;
+		emoteTabber.addPage(btn, page);
+	}
+
+	list.classList.remove("hidden");
+}
+
+function closeEmojiList() {
+	var list = document.getElementById("emojiList");
+
+	tlbox.classList.remove("hidden");
+	list.classList.add("hidden");
+
+	emoteTabber.removeAllPages();
+}
+
+function pushInputText(tx)
+{
+	if (textInput.value && textInput.value[textInput.value.length - 1] != ' ') {
+		textInput.value += ' ';
+	}
+	textInput.value += tx;
 }

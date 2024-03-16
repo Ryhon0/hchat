@@ -419,7 +419,6 @@ class HChat {
 			ee.id = e.id;
 			ee.urls =
 			{
-				4: "https://cdn.betterttv.net/emote/" + e.id + "/4x",
 				3: "https://cdn.betterttv.net/emote/" + e.id + "/3x",
 				2: "https://cdn.betterttv.net/emote/" + e.id + "/2x",
 				1: "https://cdn.betterttv.net/emote/" + e.id + "/1x",
