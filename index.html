@@ -34,11 +34,9 @@
 
 				installer = event;
 				var b = document.getElementById("installButton");
-				b.onclick = async function ()
-				{
+				b.onclick = async function () {
 					var res = await installer.prompt();
-					if(res.outcome == "accepted")
-					{
+					if (res.outcome == "accepted") {
 						b.classList.add("hidden");
 					}
 				};
@@ -50,7 +48,7 @@
 
 <body onload="loaded()">
 	<div id="dropZone" class="bi-file-arrow-down">
-			Drop file to upload
+		Drop file to upload
 	</div>
 
 	<div id="topBar">
@@ -82,7 +80,7 @@
 	<div class="inputBar">
 		<button class="bi-upload square" id="uploadButton"></button>
 		<button class="bi-emoji-smile square" id="emojiButton"></button>
-		<input id="textInput" type="text" />
+		<textarea maxlength="500" autofocus id="textInput"></textarea>
 		<button class="bi-send-fill square" id="sendButton"></button>
 	</div>
 	<div id="emoteSuggestions">
