@@ -330,6 +330,7 @@ async function loaded() {
 			if (!ev.ctrlKey) {
 				textInput.value = "";
 			}
+			ev.preventDefault();
 		}
 	});
 
