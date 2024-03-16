@@ -796,7 +796,7 @@ function createEmoteElement(c) {
 	const img = document.createElement("img");
 	img.src = c.info.getImageURL(settings.emoteSize);
 	img.loading = "lazy";
-	// img.alt = c.info.getName();
+	img.alt = c.info.getName();
 
 	const imgspan = document.createElement("span");
 	imgspan.emote = c;

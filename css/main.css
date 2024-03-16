@@ -235,6 +235,7 @@ button {
 
 .emote .emoteTooltip {
 	font-size: 1rem;
+	user-select: none;
 }
 
 .gradient {
