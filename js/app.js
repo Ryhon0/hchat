@@ -1620,7 +1620,7 @@ function openEmojiList() {
 		btn.innerText = "Emojis";
 
 		var page = document.createElement("div");
-		page.list = selectedChannel.hchannel.hchat.emojis;
+		page.list = selectedChannel.hchannel.hchat.uniToEmoji;
 		emoteTabber.addPage(btn, page);
 	}
 

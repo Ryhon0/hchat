@@ -79,17 +79,14 @@ async function getJSON(url, opts = { timeout: 5000 }) {
 	return await (await fetch(url, opts)).json();
 }
 
-async function getJSONCached(url, opts = { timeout: 5000 })
-{
+async function getJSONCached(url, opts = { timeout: 5000 }) {
 	var ch = await caches.open("hchat");
-	
+
 	var m = await ch.match(url);
-	if(m)
-	{
+	if (m) {
 		return await m.json();
 	}
-	else
-	{
+	else {
 		var r = await fetch(url, opts);
 		ch.put(url, r.clone());
 		return await r.json();
@@ -161,7 +158,11 @@ class HChat {
 		// Emojis
 		{
 			for (var ename in emojiShortCodes) {
-				var euni = emojiShortCodes[ename];
+				var oguni = emojiShortCodes[ename];
+				var euni = oguni;
+
+				if ([...euni].length == 2 && [...euni].indexOf('\uFE0F') == 1)
+					euni = [...euni].splice(0, 1).join('');
 
 				function toCodePoint(unicodeSurrogates, sep) {
 					var
@@ -492,7 +493,7 @@ class HChatChannel {
 				(async () => { sevenTVUser = await this.hchat.SevenTV.getUserConnection(sevenTVPlatform.Twitch, this.channelId); })(),
 				(async () => { bttvUser = await this.hchat.BTTV.getUser(BTTVProvider.Twitch, this.channelId); })(),
 				(async () => { ffzRoom = await this.hchat.FFZ.getRoomTwitch(this.channelId); })(),
-				
+
 			]
 		);
 
@@ -594,6 +595,10 @@ class HChatChannel {
 
 			end = r.index + r[0].length;
 			var euni = text.substring(r.index, end);
+
+			if ([...euni].length == 2 && [...euni].indexOf('\uFE0F') == 1)
+				euni = [...euni].splice(0, 1).join('');
+
 			arr.push(euni);
 		}
 		if (end < text.length) {
@@ -656,7 +661,7 @@ class HChatChannel {
 				var l = new Link();
 				l.text = s;
 				l.url = s;
-				if(!link.protocol)
+				if (!link.protocol)
 					l.url = "https://" + l.url;
 				comps.push(l);
 				continue;
@@ -683,6 +688,7 @@ class HChatChannel {
 			if (es.length > 1) {
 				for (var i in es) {
 					var e = es[i];
+					console.log(e);
 					comps = comps.concat(this.parseMessageComponents(e, msg));
 				}
 				continue;
@@ -763,8 +769,7 @@ class HChatChannel {
 			var port = urlMatch.groups.port;
 			var route = urlMatch.groups.route;
 
-			if (protocol != undefined)
-			{
+			if (protocol != undefined) {
 				if (this.allowedURLProtocols.indexOf(protocol.toLowerCase()) == -1) return undefined;
 			}
 			if (port != undefined) {
@@ -772,8 +777,7 @@ class HChatChannel {
 				if (portn < 0 && portn <= 65535) return undefined;
 			}
 
-			if(this.isDomainValid(domain))
-			{
+			if (this.isDomainValid(domain)) {
 				return {
 					protocol: protocol,
 					domain: domain,
