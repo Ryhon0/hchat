@@ -688,7 +688,6 @@ class HChatChannel {
 			if (es.length > 1) {
 				for (var i in es) {
 					var e = es[i];
-					console.log(e);
 					comps = comps.concat(this.parseMessageComponents(e, msg));
 				}
 				continue;
