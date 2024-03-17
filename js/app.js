@@ -1597,6 +1597,7 @@ function openEmojiList() {
 	var list = document.getElementById("emojiList");
 	tlbox.classList.add("hidden");
 
+	if(selectedChannel)
 	{
 		var btn = document.createElement("button");
 		btn.innerText = "Channel Emotes";

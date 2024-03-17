@@ -161,8 +161,11 @@ class HChat {
 				var oguni = emojiShortCodes[ename];
 				var euni = oguni;
 
-				if ([...euni].length == 2 && [...euni].indexOf('\uFE0F') == 1)
-					euni = [...euni].splice(0, 1).join('');
+				{
+					var cs = [...euni];
+					if (cs.length <= 3 && cs.indexOf('\uFE0F') == 1)
+						euni = [cs[0], ...cs.splice(2)].join('');
+				}
 
 				function toCodePoint(unicodeSurrogates, sep) {
 					var
@@ -596,8 +599,9 @@ class HChatChannel {
 			end = r.index + r[0].length;
 			var euni = text.substring(r.index, end);
 
-			if ([...euni].length == 2 && [...euni].indexOf('\uFE0F') == 1)
-				euni = [...euni].splice(0, 1).join('');
+			var cs = [...euni];
+			if (cs.length <= 3 && cs.indexOf('\uFE0F') == 1)
+				euni = [cs[0], ...cs.splice(2)].join('');
 
 			arr.push(euni);
 		}
