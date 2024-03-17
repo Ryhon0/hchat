@@ -262,6 +262,14 @@ async function loaded() {
 		}
 	}
 
+	document.onkeyup = (ev) => 
+	{
+		if(ev.keyCode == 27)
+		{
+			closeEmojiList();
+		}
+	}
+
 	document.onpaste = (ev) => {
 		if (ev.clipboardData.files && ev.clipboardData.files.length) {
 			for (const f of ev.clipboardData.files)
