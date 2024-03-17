@@ -246,26 +246,22 @@ async function loaded() {
 	};
 	emoteTabber = new Tabber(document.getElementById("emoteTabs"), document.getElementById("emotePages"));
 	emoteTabber.onPageClosed = (page) => { page.innerHTML = "" };
-	emoteTabber.onPageSwitched = (page) => 
-	{
+	emoteTabber.onPageSwitched = (page) => {
 		for (var ek in page.list) {
 			const ei = page.list[ek];
 			var e = new Emote();
 			e.info = ei;
 
 			var ee = createEmoteElement(e);
-			ee.onclick = (ev) => 
-			{
+			ee.onclick = (ev) => {
 				pushInputText(ev.currentTarget.emote.info.getName());
 			}
 			page.appendChild(ee);
 		}
 	}
 
-	document.onkeyup = (ev) => 
-	{
-		if(ev.keyCode == 27)
-		{
+	document.onkeyup = (ev) => {
+		if (ev.keyCode == 27) {
 			closeEmojiList();
 		}
 	}
@@ -403,6 +399,25 @@ function processMessage(pm, historical = false) {
 		return;
 	}
 
+	var mi = document.createElement("div");
+	mi.classList.add("message");
+	mi.id = "message#" + pm.tags.id;
+	mi.message = pm;
+
+	// Timestamp
+	{
+		var ts = document.createElement("span");
+		ts.classList.add("time");
+
+		var t = new Date(pm.time);
+		ts.innerText = t.getHours() + ":" + String(t.getMinutes()).padStart(2, '0');
+
+		mi.appendChild(ts);
+	}
+
+	var micon = document.createElement("div");
+	mi.appendChild(micon);
+
 	if (pm.command.command == "CLEARMSG") {
 		const mid = pm.tags["target-msg-id"];
 
@@ -412,25 +427,16 @@ function processMessage(pm, historical = false) {
 		var rm = messagesById[mid] ?? pm;
 
 		{
-			var mi = document.createElement("div");
-			mi.classList.add("message");
 			mi.classList.add("deletion");
 
 			var c = document.createElement("div");
 			c.classList.add("reply");
 			c.appendChild(getFullMessageElement(channel, rm));
-			mi.appendChild(c);
+			micon.appendChild(c);
 
 			var m = document.createElement("div");
-
-			var ts = document.createElement("span");
-			ts.classList.add("time");
-			var t = new Date(pm.time);
-			ts.innerText = t.getHours() + ":" + String(t.getMinutes()).padStart(2, '0');
-			m.appendChild(ts);
-
 			m.innerText += " Message from " + rm.displayName() + " was deleted";
-			mi.appendChild(m);
+			micon.appendChild(m);
 
 			if (!historical && channel.timeline.firstChild)
 				channel.timeline.appendChild(mi);
@@ -438,7 +444,7 @@ function processMessage(pm, historical = false) {
 				channel.timeline.insertBefore(mi, channel.timeline.firstChild);
 			maintainMessageLimit(channel.timeline);
 
-			mi.onclick = (ev) => {
+			micon.onclick = (ev) => {
 				const ri = document.getElementById("message#" + mid);
 				if (ri) {
 					ri.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -455,14 +461,8 @@ function processMessage(pm, historical = false) {
 
 	if (["PRIVMSG", "USERNOTICE"].indexOf(pm.command.command) == -1) return;
 
-
 	if (pm.content[pm.content.length - 1] == '\r')
 		pm.content = pm.content.substring(0, pm.content.length - 1);
-
-	var mi = document.createElement("div");
-	mi.classList.add("message");
-	mi.id = "message#" + pm.tags.id;
-	mi.message = pm;
 
 	// Recent messages deleted tag
 	if (pm.tags["rm-deleted"])
@@ -478,44 +478,43 @@ function processMessage(pm, historical = false) {
 				var subFrom = pm.tags["display-name"];
 				var subFromId = pm.tags["user-id"];
 
+				mi.classList.add("sub");
 				{
 					var text = pm.tags["system-msg"];
-					var li = document.createElement("li");
-					li.classList.add("sub");
+					var li = document.createElement("div");
 					li.innerText = text;
+
+					micon.appendChild(li);
+				}
+
+				if (!pm.command.channel) {
 					if (!historical && channel.timeline.firstChild)
-						channel.timeline.appendChild(li);
+						channel.timeline.appendChild(mi);
 					else
-						channel.timeline.insertBefore(li, channel.timeline.firstChild);
-
-					maintainMessageLimit(channel.timeline);
+						channel.timeline.insertBefore(mi, channel.timeline.firstChild);
+					return;
 				}
-
-				if (pm.command.channel) {
-					mi.classList.add("sub");
-				}
-				else return;
 				break;
 			case "raid":
 				var raidFrom = pm.tags["msg-param-displayName"];
 				var raidFromId = pm.tags["user-id"];
 
+				mi.classList.add("raid");
 				{
 					var text = pm.tags["system-msg"];
 					var li = document.createElement("li");
 					li.classList.add("raid");
 					li.innerText = text.replace("\n", "");
 
+					micon.appendChild(li);
+				}
+				if (!pm.command.channel) {
 					if (!historical && channel.timeline.firstChild)
-						channel.timeline.appendChild(li);
+						channel.timeline.appendChild(mi);
 					else
-						channel.timeline.insertBefore(li, channel.timeline.firstChild);
-					maintainMessageLimit(channel.timeline);
+						channel.timeline.insertBefore(mi, channel.timeline.firstChild);
+					return;
 				}
-				if (pm.command.channel) {
-					mi.classList.add("raid");
-				}
-				else return;
 				break;
 			default:
 				console.log("Unhandled USERNOTICE, msg-id: " + pm.tags["msg-id"]);
@@ -523,6 +522,9 @@ function processMessage(pm, historical = false) {
 				return;
 		}
 	}
+
+	// Recent messages duplicates
+	if (messagesById[pm.messageId()]) return;
 
 	messagesById[pm.messageId()] = pm;
 
@@ -576,7 +578,7 @@ function processMessage(pm, historical = false) {
 			}
 		};
 
-		mi.appendChild(replyElem);
+		micon.appendChild(replyElem);
 	}
 
 	// Content 
@@ -584,18 +586,7 @@ function processMessage(pm, historical = false) {
 	{
 		var contentElem = document.createElement("div");
 		contentElem.classList.add("content");
-		mi.appendChild(contentElem);
-
-		// Timestamp
-		{
-			var ts = document.createElement("span");
-			ts.classList.add("time");
-
-			var t = new Date(pm.time);
-			ts.innerText = t.getHours() + ":" + String(t.getMinutes()).padStart(2, '0');
-
-			contentElem.appendChild(ts);
-		}
+		micon.appendChild(contentElem);
 
 		// Full message
 		{
@@ -1531,7 +1522,7 @@ class Tabber {
 	pageList
 	/** @type { Element } */
 	currentPage
-	onPageClosed = (page) => {}
+	onPageClosed = (page) => { }
 	onPageSwitched = (page) => { }
 
 	constructor(tabs, pages) {
@@ -1557,12 +1548,12 @@ class Tabber {
 	}
 
 	removePage(page) {
-		if(page == this.currentPage)
+		if (page == this.currentPage)
 			this.currentPage = null;
-		
+
 		if (page.tab)
 			page.tab.remove();
-		
+
 		page.remove();
 	}
 
@@ -1573,7 +1564,7 @@ class Tabber {
 	}
 
 	switchPage(page) {
-		if(this.currentPage) this.onPageClosed(this.currentPage);
+		if (this.currentPage) this.onPageClosed(this.currentPage);
 
 		this.currentPage = page;
 		this.onPageSwitched(page);
@@ -1646,8 +1637,7 @@ function closeEmojiList() {
 	emoteTabber.removeAllPages();
 }
 
-function pushInputText(tx)
-{
+function pushInputText(tx) {
 	if (textInput.value && textInput.value[textInput.value.length - 1] != ' ') {
 		textInput.value += ' ';
 	}

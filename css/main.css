@@ -104,7 +104,7 @@ body {
 	flex-grow: 1;
 	font-size: 1em;
 	resize: none;
-	vertical-align:middle;
+	vertical-align: middle;
 	font-family: FreeSans, Sans;
 	padding: 0.25em;
 }
@@ -145,6 +145,12 @@ button {
 	animation-name: replyHighlight;
 	animation-duration: 1s;
 	animation-play-state: running;
+}
+
+.message {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
 }
 
 @keyframes replyHighlight {
