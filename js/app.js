@@ -390,7 +390,7 @@ var messagesById = {};
 /**
  * @param { Message } pm 
  */
-function processMessage(pm, historical = false) {
+function processMessage(pm, beforeElem = undefined) {
 	if (!pm || !pm.command) return;
 
 	var channel = getChannelById(pm.roomId());
@@ -438,10 +438,8 @@ function processMessage(pm, historical = false) {
 			m.innerText += " Message from " + rm.displayName() + " was deleted";
 			micon.appendChild(m);
 
-			if (!historical && channel.timeline.firstChild)
-				channel.timeline.appendChild(mi);
-			else
-				channel.timeline.insertBefore(mi, channel.timeline.firstChild);
+			if (!beforeElem) channel.timeline.appendChild(mi);
+			else channel.timeline.insertBefore(mi, beforeElem);
 			maintainMessageLimit(channel.timeline);
 
 			micon.onclick = (ev) => {
@@ -488,10 +486,8 @@ function processMessage(pm, historical = false) {
 				}
 
 				if (!pm.command.channel) {
-					if (!historical && channel.timeline.firstChild)
-						channel.timeline.appendChild(mi);
-					else
-						channel.timeline.insertBefore(mi, channel.timeline.firstChild);
+					if (!beforeElem) channel.timeline.appendChild(mi);
+				else channel.timeline.insertBefore(mi, beforeElem);
 					return;
 				}
 				break;
@@ -509,10 +505,8 @@ function processMessage(pm, historical = false) {
 					micon.appendChild(li);
 				}
 				if (!pm.command.channel) {
-					if (!historical && channel.timeline.firstChild)
-						channel.timeline.appendChild(mi);
-					else
-						channel.timeline.insertBefore(mi, channel.timeline.firstChild);
+					if (!beforeElem) channel.timeline.appendChild(mi);
+					else channel.timeline.insertBefore(mi, beforeElem);
 					return;
 				}
 				break;
@@ -624,10 +618,8 @@ function processMessage(pm, historical = false) {
 		}
 	}
 
-	if (!historical && channel.timeline.firstChild)
-		channel.timeline.appendChild(mi);
-	else
-		channel.timeline.insertBefore(mi, channel.timeline.firstChild);
+	if (!beforeElem) channel.timeline.appendChild(mi);
+	else channel.timeline.insertBefore(mi, beforeElem);
 	maintainMessageLimit(channel.timeline);
 }
 
@@ -1134,9 +1126,16 @@ async function openChannelTab(name, id = undefined) {
 
 		var msg = await new RecentMessagesAPI().getRecentMessages(ch.name.toLowerCase(), settings.recentMessagesLimit);
 		if (!msg.erorr) {
-			for (var m of msg.messages.reverse()) {
-				processMessage(parseMessage(m), true);
+			var stopper = document.createElement("div");
+			if(ch.timeline.firstChild)
+				ch.timeline.appendChild(stopper);
+			else ch.timeline.insertBefore(stopper, ch.firstChild);
+
+			for (var m of msg.messages) {
+				processMessage(parseMessage(m), stopper);
 			}
+
+			stopper.remove();
 		}
 		else {
 			ch.timeline.appendChild(document.createTextNode("Failed to load message history" + msg.erorr_code + " - " + msg.erorr));
