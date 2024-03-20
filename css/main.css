@@ -132,10 +132,6 @@ button {
 	text-align: center;
 }
 
-.timeline {
-	word-wrap: break-word;
-}
-
 .timeline .reply {
 	font-size: 0.75em;
 	cursor: pointer;
@@ -167,11 +163,6 @@ button {
 	}
 }
 
-.timeline>* {
-	padding: 0.2em;
-	padding-left: 0.5em;
-}
-
 .timeline>* .time {
 	padding-right: 0.3em;
 	opacity: 50%;
@@ -179,12 +170,19 @@ button {
 
 .timeline>* a.link {
 	color: #3a3ae5;
+	word-break: break-all;
 }
 
 .timeline>* {
+	padding: 0.2em;
+	padding-left: 0.5em;
+	width: calc(100% - 0.7em);
+
 	--bg-color: #333;
 	--bg-color-other: #222;
 	background-color: var(--bg-color);
+
+	display: flex;
 }
 
 .timeline>:nth-child(2n) {
