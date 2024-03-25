@@ -132,6 +132,12 @@ button {
 	text-align: center;
 }
 
+.timeline .upload
+{
+	display: flex;
+	flex-direction: column;
+}
+
 .timeline .reply {
 	font-size: 0.75em;
 	cursor: pointer;

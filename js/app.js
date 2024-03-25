@@ -487,7 +487,7 @@ function processMessage(pm, beforeElem = undefined) {
 
 				if (!pm.command.channel) {
 					if (!beforeElem) channel.timeline.appendChild(mi);
-				else channel.timeline.insertBefore(mi, beforeElem);
+					else channel.timeline.insertBefore(mi, beforeElem);
 					return;
 				}
 				break;
@@ -1127,7 +1127,7 @@ async function openChannelTab(name, id = undefined) {
 		var msg = await new RecentMessagesAPI().getRecentMessages(ch.name.toLowerCase(), settings.recentMessagesLimit);
 		if (!msg.erorr) {
 			var stopper = document.createElement("div");
-			if(ch.timeline.firstChild)
+			if (ch.timeline.firstChild)
 				ch.timeline.appendChild(stopper);
 			else ch.timeline.insertBefore(stopper, ch.firstChild);
 
@@ -1319,11 +1319,11 @@ function uploadFile(f) {
 	const fr = new FileReader();
 	fr.readAsArrayBuffer(f);
 	fr.onload = async () => {
-		{
-			var b = document.createElement("div");
-			b.innerText = "Uploading " + f.name + "...";
-			selectedChannel.timeline.appendChild(b);
-		}
+		const uploadMessage = document.createElement("div");
+		uploadMessage.classList.add("upload");
+		const upText = document.createTextNode("Uploading " + f.name + "...");
+		uploadMessage.appendChild(upText);
+		selectedChannel.timeline.appendChild(uploadMessage);
 
 		var uploader = new Uploader();
 		uploader.url = settings.uploaderUrl;
@@ -1331,36 +1331,59 @@ function uploadFile(f) {
 		uploader.linkFormat = settings.uploaderLinkFormat;
 		uploader.deleteFormat = settings.uploaderDeleteFormat;
 
-		var r = await uploader.upload(new Blob([fr.result], { type: f.type }), f.name);
-		if (r.link) {
-			{
-				var b = document.createElement("div");
-				b.innerText = "File uploaded to ";
+		var onProgress = undefined;
+		if (settings.uploaderUploadProgress) {
+			const bar = document.createElement("progress");
+			uploadMessage.appendChild(bar);
+			onProgress = (e) => {
+				bar.max = e.total;
+				bar.value = e.loaded;
+				var precentage = (e.loaded / e.total) * 100;
+				precentage -= precentage % 1;
 
-				var a = document.createElement("a");
-				a.href = r.link;
-				a.innerText = r.link;
-				a.target = "_blank";
-
-				b.appendChild(a);
-				selectedChannel.timeline.appendChild(b);
-			}
-
-			pushInputText(r.link);
-
-			if (r.delete) {
-				var b = document.createElement("div");
-				b.innerText = "Delete link: ";
-
-				var a = document.createElement("a");
-				a.href = r.delete;
-				a.innerText = r.delete;
-				a.target = "_blank";
-
-				b.appendChild(a);
-				selectedChannel.timeline.appendChild(b);
+				upText.textContent = "Uploading " + f.name + "... " + precentage + "%";
 			}
 		}
+
+		uploader.upload(new Blob([fr.result], { type: f.type }), f.name,
+			onProgress,
+			(r) => {
+				if (r.error) {
+					var b = document.createElement("div");
+					b.innerText = "Failed to upload " + f.name + ", check dev tools...";
+					selectedChannel.timeline.appendChild(b);
+					console.log(r.error);
+				}
+				else {
+					{
+						var b = document.createElement("div");
+						b.innerText = "File uploaded to ";
+
+						var a = document.createElement("a");
+						a.href = r.link;
+						a.innerText = r.link;
+						a.target = "_blank";
+
+						b.appendChild(a);
+						selectedChannel.timeline.appendChild(b);
+					}
+
+					pushInputText(r.link);
+
+					if (r.delete) {
+						var b = document.createElement("div");
+						b.innerText = "Delete link: ";
+
+						var a = document.createElement("a");
+						a.href = r.delete;
+						a.innerText = r.delete;
+						a.target = "_blank";
+
+						b.appendChild(a);
+						selectedChannel.timeline.appendChild(b);
+					}
+				}
+			});
 	};
 }
 
@@ -1477,6 +1500,7 @@ function openSettings() {
 			settingsPage.appendChild(createTextbox("uploaderField", "File field"));
 			settingsPage.appendChild(createTextbox("uploaderLinkFormat", "Link format"));
 			settingsPage.appendChild(createTextbox("uploaderDeleteFormat", "Delete format"));
+			settingsPage.appendChild(createCheckbox("uploaderUploadProgress", "Monitor upload progress"));
 		}
 	}
 }
@@ -1499,6 +1523,7 @@ class Settings {
 	// uploaderHeaders
 	uploaderLinkFormat = "{link}"
 	uploaderDeleteFormat = "{delete}"
+	uploaderUploadProgress = true
 }
 var settings = new Settings();
 
@@ -1597,8 +1622,7 @@ function openEmojiList() {
 	var list = document.getElementById("emojiList");
 	tlbox.classList.add("hidden");
 
-	if(selectedChannel)
-	{
+	if (selectedChannel) {
 		var btn = document.createElement("button");
 		btn.innerText = "Channel Emotes";
 

@@ -6,24 +6,37 @@ class Uploader
 	linkFormat = "{link}"
 	deleteFormat = "{delete}"
 
-	async upload(blob, name) {
-		var form = new FormData();
+	upload(blob, name, progress, result) {
+		const form = new FormData();
 		form.append(this.field, blob, name);
 
-		var r = await fetch(this.url, 
+		const xhr = new XMLHttpRequest();
+		xhr.open('POST', this.url);
+		xhr.upload.addEventListener
+		
+		if(progress)
+			xhr.upload.onprogress = (e) => progress(e);
+		
+		xhr.onreadystatechange = (e) =>
+		{
+			if(xhr.readyState == XMLHttpRequest.DONE)
 			{
-				method: 'POST',
-				body: form,
-				headers: {
-
+				if(xhr.status <= 200 && xhr.status < 300)
+				{
+					var j = JSON.parse(xhr.responseText);
+					console.log(j);
+					result({
+						link: formatGetIndexed(this.linkFormat, j),
+						delete: formatGetIndexed(this.deleteFormat, j)
+					});
 				}
-			});
-		var j = await r.json();
-
-		return {
-			link: formatGetIndexed(this.linkFormat, j),
-			delete: formatGetIndexed(this.deleteFormat, j)
-		}
+				else
+				{
+					result({ error: [xhr, e] });
+				}
+			}
+		};
+		xhr.send(form);
 	}
 }
 
