@@ -244,7 +244,33 @@ async function loaded() {
 			closeEmojiList();
 		}
 	};
-	emoteTabber = new Tabber(document.getElementById("emoteTabs"), document.getElementById("emotePages"));
+
+	const emoteTabs = document.getElementById("emoteTabs");
+	const emotePages = document.getElementById("emotePages");
+	const emoteSearch = document.getElementById("emoteSearch");
+
+	function filterEmotes(query) {
+		query = query.toLowerCase();
+		const currentPage = emoteTabber.currentPage;
+
+		for (var e of currentPage.children) {
+			var matches = false;
+
+			if (query.length != 0) {
+				if (e.emote.info.name)
+					matches ||= e.emote.info.name.toLowerCase().includes(query);
+				if (e.emote.info.alias)
+					matches ||= e.emote.info.alias.toLowerCase().includes(query);
+			}
+			else matches = true;
+
+			if (matches) e.classList.remove("hidden");
+			else e.classList.add("hidden");
+		}
+	}
+	emoteSearch.oninput = () => { filterEmotes(emoteSearch.value) };
+
+	emoteTabber = new Tabber(emoteTabs, emotePages);
 	emoteTabber.onPageClosed = (page) => { page.innerHTML = "" };
 	emoteTabber.onPageSwitched = (page) => {
 		for (var ek in page.list) {
@@ -258,6 +284,7 @@ async function loaded() {
 			}
 			page.appendChild(ee);
 		}
+		filterEmotes(emoteSearch.value);
 	}
 
 	document.onkeyup = (ev) => {
