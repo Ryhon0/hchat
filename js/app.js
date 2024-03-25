@@ -1390,7 +1390,7 @@ function uploadFile(f) {
 var settingsPage;
 function openSettings() {
 	if (settingsPage) {
-		switchTab(settingsPage);
+		channelTabber.switchPage(settingsPage);
 		return;
 	}
 
