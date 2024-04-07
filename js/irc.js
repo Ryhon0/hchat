@@ -85,8 +85,11 @@ function parseMessage(message) {
 		}
 	}
 
-	if (parsedMessage.tags)
+	if (parsedMessage.tags && parsedMessage.tags["tmi-sent-ts"])
+	{
 		parsedMessage.time = parseInt(parsedMessage.tags["tmi-sent-ts"]);
+	}
+	else parsedMessage.time = Date.now();
 
 	return parsedMessage;
 }
