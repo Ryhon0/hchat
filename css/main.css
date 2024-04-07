@@ -358,3 +358,29 @@ input:placeholder-shown {
 #emoteTabs>.active {
 	background-color: #2d4c21;
 }
+
+#replyingToBar
+{
+	padding: 0.35em;
+	background: #222222;
+	display: flex;
+	flex-direction: column;
+}
+
+#replyingToBar > *
+{
+	display: flex;
+	flex-direction: row;
+}
+
+#replyContent
+{
+	flex-grow: 1;
+}
+
+.messageMenu
+{
+	display: flex;
+	flex-direction: column;
+	width: 15em;
+}

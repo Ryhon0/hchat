@@ -360,6 +360,7 @@ async function loaded() {
 
 			if (!ev.ctrlKey) {
 				textInput.value = "";
+				setReply();
 			}
 			ev.preventDefault();
 		}
@@ -430,6 +431,39 @@ function processMessage(pm, beforeElem = undefined) {
 	mi.classList.add("message");
 	mi.id = "message#" + pm.tags.id;
 	mi.message = pm;
+
+	mi.oncontextmenu = (ev) => {
+		var menu = document.createElement("div");
+		menu.classList.add("messageMenu");
+		document.body.appendChild(menu);
+
+		{
+			var copyid = createElementWithText("button", "Copy message ID");
+			copyid.onclick = () => {
+				navigator.clipboard.writeText(pm.tags.id);
+				menu.remove();
+			};
+			menu.appendChild(copyid);
+		}
+
+		{
+			var reply = createElementWithText("button", "Reply to message");
+			reply.onclick = () => {
+				setReply(pm.tags.id);
+				menu.remove();
+			};
+			menu.appendChild(reply);
+		}
+
+		setInterval(() => {
+			document.addEventListener("click", (ev) => {
+				menu.remove();
+			});
+		}, 0);
+
+		showTooltip([ev.clientX, ev.clientY], menu);
+		ev.preventDefault();
+	}
 
 	// Timestamp
 	{
@@ -882,13 +916,22 @@ function showTooltip(parent, what) {
 	tooltip = what;
 
 	what.classList.add("tooltip");
-	parent.appendChild(what);
 
-	var parentBbox = parent.getBoundingClientRect();
 	var tipBbox = what.getBoundingClientRect();
 
-	var y = parentBbox.bottom;
-	var x = (parentBbox.right - (parentBbox.width / 2)) - (tipBbox.width / 2)
+	var x, y;
+	if (parent instanceof Element) {
+		parent.appendChild(what);
+		var parentBbox = parent.getBoundingClientRect();
+		x = (parentBbox.right - (parentBbox.width / 2)) - (tipBbox.width / 2)
+		y = parentBbox.bottom;
+		parent.onmouseleave = () => { what.remove() };
+	}
+	else {
+		x = parent[0];
+		y = parent[1];
+		document.body.appendChild(what);
+	}
 
 	if (y + tipBbox.height > document.documentElement.clientHeight) {
 		y = document.documentElement.clientHeight - tipBbox.height - 1;
@@ -1221,10 +1264,34 @@ async function openChannelChat(name, id = undefined) {
 	return ch;
 }
 
+var replyingToId = undefined;
+function setReply(id) {
+	replyingToId = id;
+
+	var content = document.getElementById("replyContent");
+	content.innerHTML = "";
+
+	var replyingToBar = document.getElementById("replyingToBar");
+	if (replyingToId) {
+		replyingToBar.classList.remove("hidden");
+
+		var msg = messagesById[replyingToId];
+		if (msg) {
+			content.appendChild(getFullMessageElement(selectedChannel, msg));
+		}
+		else {
+			content.innerText = "Could not find message with ID " + replyingToId;
+		}
+	}
+	else replyingToBar.classList.add("hidden");
+}
+
 function sendMessage(msg) {
 	var ch = selectedChannel.name;
 
-	activeAccount.irc.sendMessage({ "client-nonce": "hchat," }, ch, msg);
+	var tags = { "client-nonce": "hchat," };
+	if (replyingToId) tags["reply-parent-msg-id"] = replyingToId;
+	activeAccount.irc.sendMessage(tags, ch, msg);
 }
 
 const AccountStateChecking = 0;
