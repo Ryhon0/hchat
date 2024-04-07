@@ -422,9 +422,17 @@ function processMessage(pm, beforeElem = undefined) {
 	if (!pm || !pm.command) return;
 
 	var channel = getChannelById(pm.roomId());
-	if (!channel) {
-		console.error("Recieved message in channel " + pm.roomId() + ", but no chat with this name was opened");
-		return;
+	if(isNaN(pm.roomId()))
+	{
+		channel = selectedChannel;
+	}
+	else
+	{
+		if (!channel) {
+			console.error("Recieved message in channel " + pm.roomId() + ", but no chat with this name was opened");
+			console.log(pm);
+			return;
+		}
 	}
 
 	var mi = document.createElement("div");
@@ -518,7 +526,7 @@ function processMessage(pm, beforeElem = undefined) {
 		return;
 	}
 
-	if (["PRIVMSG", "USERNOTICE"].indexOf(pm.command.command) == -1) return;
+	if (["PRIVMSG", "USERNOTICE", "NOTICE"].indexOf(pm.command.command) == -1) return;
 
 	if (pm.content[pm.content.length - 1] == '\r')
 		pm.content = pm.content.substring(0, pm.content.length - 1);
@@ -528,7 +536,7 @@ function processMessage(pm, beforeElem = undefined) {
 		mi.classList.add("deleted");
 
 	// Sub messages, raids
-	if (pm.command.command == "USERNOTICE") {
+	if (pm.command.command == "USERNOTICE" || pm.command.command == "NOTICE") {
 		switch (pm.tags["msg-id"]) {
 			case "subgift":
 			case "submysterygift":
@@ -574,6 +582,13 @@ function processMessage(pm, beforeElem = undefined) {
 			default:
 				console.log("Unhandled USERNOTICE, msg-id: " + pm.tags["msg-id"]);
 				console.log(pm);
+			case "msg_ratelimit":
+				console.log(pm.tags["msg-id"]);
+				mi.appendChild(document.createTextNode(pm.content));
+
+				if (!beforeElem) channel.timeline.appendChild(mi);
+				else channel.timeline.insertBefore(mi, beforeElem);
+				
 				return;
 		}
 	}
@@ -944,8 +959,6 @@ function showTooltip(parent, what) {
 
 	what.style.top = y + "px";
 	what.style.left = x + "px";
-
-	parent.onmouseleave = () => { what.remove() };
 }
 
 class ChatClient {
@@ -1378,7 +1391,10 @@ function saveAccounts() {
 
 function onAccountReady(acc) {
 	acc.irc = new ChatClient(acc.name.toLowerCase(), acc.token);
-	acc.irc.onMessage = (msg) => { };
+	acc.irc.onMessage = (msg) =>
+	{
+		processMessage(msg);
+	};
 }
 
 function onAccountChanged() {
