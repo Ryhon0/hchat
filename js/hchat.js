@@ -254,8 +254,8 @@ class HChat {
 				this.globalEmotes = { ...this.globalEmotes, ...this.processSevenTVEmotes(sevenTVGlobalSet.emotes) };
 			}
 			catch (e) {
-				console.error("Failed to load global 7TV emotes");
-				console.error(e);
+				console.warn("Failed to load global 7TV emotes");
+				console.warn(e);
 			}
 
 			// Here's where I would put the 7TV badge provider
@@ -268,8 +268,8 @@ class HChat {
 				this.globalEmotes = { ...this.globalEmotes, ...this.processBTTVEmotes(BTTVGlobalEmotes) };
 			}
 			catch (e) {
-				console.error("Failed to load global BTTV emotes");
-				console.error(e);
+				console.warn("Failed to load global BTTV emotes");
+				console.warn(e);
 			}
 
 			// Badges
@@ -313,8 +313,8 @@ class HChat {
 				}
 			}
 			catch (e) {
-				console.error("Failed to load global FFZ emotes");
-				console.error(e);
+				console.warn("Failed to load global FFZ emotes");
+				console.warn(e);
 			}
 
 			// Global badges
@@ -508,8 +508,8 @@ class HChatChannel {
 				this.channelEmotes = { ...this.channelEmotes, ...this.hchat.processSevenTVEmotes(sevenTVUser.emote_set.emotes) };
 			}
 			catch (e) {
-				console.error("Failed to load 7TV emotes for channel " + this.channelId);
-				console.error(e);
+				console.warn("Failed to load 7TV emotes for channel " + this.channelId);
+				console.warn(e);
 			}
 		}
 
@@ -520,8 +520,8 @@ class HChatChannel {
 				this.botList = this.botList.concat(bttvUser.bots);
 			}
 			catch (e) {
-				console.error("Failed to load BTTV channel " + this.channelId);
-				console.error(e);
+				console.warn("Failed to load BTTV channel " + this.channelId);
+				console.warn(e);
 			}
 		}
 
@@ -558,8 +558,8 @@ class HChatChannel {
 				this.ffzBotBadgeOwnerIDs = ffzRoom.room.user_badge_ids["2"] ?? [];
 			}
 			catch (e) {
-				console.error("Failed to load FFZ emotes for channel " + this.channelId);
-				console.error(e);
+				console.warn("Failed to load FFZ emotes for channel " + this.channelId);
+				console.warn(e);
 			}
 		}
 	}
