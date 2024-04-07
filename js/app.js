@@ -370,6 +370,7 @@ async function loaded() {
 		var text = textInput.value;
 		sendMessage(text);
 		textInput.value = "";
+		setReply();
 	});
 
 	// HChat buttons
