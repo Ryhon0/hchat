@@ -110,7 +110,7 @@ class TwitchAPI {
 }
 
 function parseTwitchBadges(badges) {
-	var list = {};
+	var list = new Map();
 	for (b of badges) {
 		for (v of b.versions) {
 			var id = b.set_id + "/" + v.id;
@@ -120,14 +120,14 @@ function parseTwitchBadges(badges) {
 			vo.img = v.image_url_4x;
 			vo.description = v.description;
 			vo.provider = "twitch";
-			list[id] = vo;
+			list.set(id, vo);
 		}
 	}
 	return list;
 }
 
 function parseCheermotes(data, custom = false) {
-	var cl = {};
+	var cl = new Map();
 	for (var i in data) {
 		var c = data[i];
 		var prefix = c.prefix;
@@ -142,7 +142,7 @@ function parseCheermotes(data, custom = false) {
 				ce.color = t.color;
 				ce.urls = t.images.dark.animated;
 
-				cl[ce.name.toLowerCase()] = ce;
+				cl.set(ce.name.toLowerCase(), ce);
 			}
 	}
 	return cl;

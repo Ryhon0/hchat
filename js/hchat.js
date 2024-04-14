@@ -111,9 +111,9 @@ class Badge {
 }
 
 class HChat {
-	globalEmotes = {}
-	uniToEmoji = {}
-	emojis = {}
+	globalEmotes = new Map()
+	uniToEmoji = new Map()
+	emojis = new Map()
 	tlds = []
 
 	SevenTV = new SevenTVAPI();
@@ -126,11 +126,11 @@ class HChat {
 	 */
 	badgePredictates = [];
 
-	globalCheerMotes = {}
-	globalTwitchBadges = {}
+	globalCheerMotes = new Map()
+	globalTwitchBadges = new Map()
 	globalFFZBadgeOwners = {}
-	globalFFZBadges = {}
-	bttvBadges = {}
+	globalFFZBadges = new Map()
+	bttvBadges = new Map()
 
 	async init() {
 		// Run requests concurently
@@ -197,8 +197,8 @@ class HChat {
 					4: "/assets/twemoji/" + toCodePoint(euni, '-') + ".svg"
 				}
 
-				this.uniToEmoji[euni] = ei;
-				this.emojis[ename] = ei;
+				this.uniToEmoji.set(euni, ei);
+				this.emojis.set(ename, ei);
 			}
 		}
 
@@ -217,10 +217,10 @@ class HChat {
 					for (b of msg.tags.badges.split(',')) {
 						if (!b) continue;
 
-						if (b in hchannel.channelTwitchBadges)
-							list.push(hchannel.channelTwitchBadges[b]);
-						else if (b in hchannel.hchat.globalTwitchBadges)
-							list.push(hchannel.hchat.globalTwitchBadges[b]);
+						if (hchannel.channelTwitchBadges.has(b))
+							list.push(hchannel.channelTwitchBadges.get(b));
+						else if (hchannel.hchat.globalTwitchBadges.has(b))
+							list.push(hchannel.hchat.globalTwitchBadges.get(b));
 					}
 				return list;
 			}
@@ -251,7 +251,7 @@ class HChat {
 		// Global 7TV emotes
 		{
 			try {
-				this.globalEmotes = { ...this.globalEmotes, ...this.processSevenTVEmotes(sevenTVGlobalSet.emotes) };
+				this.globalEmotes = new Map([...this.globalEmotes, ...this.processSevenTVEmotes(sevenTVGlobalSet.emotes)]);
 			}
 			catch (e) {
 				console.warn("Failed to load global 7TV emotes");
@@ -265,7 +265,7 @@ class HChat {
 		// Global BTTV emotes
 		{
 			try {
-				this.globalEmotes = { ...this.globalEmotes, ...this.processBTTVEmotes(BTTVGlobalEmotes) };
+				this.globalEmotes = new Map([...this.globalEmotes, ...this.processBTTVEmotes(BTTVGlobalEmotes)]);
 			}
 			catch (e) {
 				console.warn("Failed to load global BTTV emotes");
@@ -284,7 +284,7 @@ class HChat {
 					b.title = bo.badge.description;
 					b.img = bo.badge.svg;
 
-					this.bttvBadges[uid] = b;
+					this.bttvBadges.set(uid, b);
 				}
 
 				/**
@@ -296,8 +296,8 @@ class HChat {
 				function getBTTVBadges(list, msg, hchannel) {
 					var uid = Number(msg.tags["user-id"]);
 
-					if (uid in hchannel.hchat.bttvBadges)
-						list.push(hchannel.hchat.bttvBadges[uid]);
+					if (hchannel.hchat.bttvBadges.has(uid))
+						list.push(hchannel.hchat.bttvBadges.get(uid));
 
 					return list;
 				};
@@ -309,7 +309,7 @@ class HChat {
 		{
 			try {
 				for (var k in FFZGlobalEmotes.sets) {
-					this.globalEmotes = { ...this.globalEmotes, ...this.processFFZSet(FFZGlobalEmotes.sets[k].emoticons) };
+					this.globalEmotes = new Map([...this.globalEmotes, ...this.processFFZSet(FFZGlobalEmotes.sets[k].emoticons)]);
 				}
 			}
 			catch (e) {
@@ -329,7 +329,7 @@ class HChat {
 					bi.img = b.urls["4"];
 					bi._replaces = b.replaces;
 
-					this.globalFFZBadges[b.id + ""] = bi;
+					this.globalFFZBadges.set(b.id + "", bi);
 				}
 
 				this.globalFFZBadgeOwners = FFZBadges.users;
@@ -346,15 +346,17 @@ class HChat {
 
 					var globalbot = false;
 					for (var i in hchannel.hchat.globalFFZBadgeOwners) {
-						if (i == 2 && hchannel.ffzBotBadgeOwnerIDs.indexOf(uid) != -1)
-							list.push(hchannel.hchat.globalFFZBadges[2]);
+						if (i == "2" && hchannel.ffzBotBadgeOwnerIDs.indexOf(uid) != -1)
+							list.push(hchannel.hchat.globalFFZBadges.get(i));
 						else if (hchannel.hchat.globalFFZBadgeOwners[i].indexOf(uname) != -1) {
-							list.push(hchannel.hchat.globalFFZBadges[i]);
+							list.push(hchannel.hchat.globalFFZBadges.get(i));
 						}
 					}
 
 					if (hchannel.ffzVIPBadge) {
 						for (var i in list) {
+							if (list[i] == undefined) continue;
+
 							if (list[i].id.startsWith("vip/") && list[i].provider == "twitch") {
 								list[i] = hchannel.ffzVIPBadge;
 								break;
@@ -382,7 +384,7 @@ class HChat {
 	 * @returns { EmoteInfo[String] } 
 	 */
 	processSevenTVEmotes(elist) {
-		var list = {};
+		var list = new Map();
 		if (!elist) {
 			console.warn("Emote set does not have any emotes");
 			return;
@@ -404,7 +406,7 @@ class HChat {
 			ee.provider = hchatEmoteProviderSevenTV;
 			ee.overlay = (e.flags & 1) != 0;
 
-			list[ee.alias ?? ee.name] = ee;
+			list.set(ee.alias ?? ee.name, ee);
 		}
 
 		return list;
@@ -415,7 +417,7 @@ class HChat {
 	 * @returns { EmoteInfo[String] } 
 	 */
 	processBTTVEmotes(elist) {
-		var list = {};
+		var list = new Map();
 		for (var i = 0; i < elist.length; i++) {
 			var e = elist[i];
 
@@ -431,7 +433,7 @@ class HChat {
 
 			ee.name = e.code;
 			ee.provider = hchatEmoteProviderBTTV;
-			list[ee.name] = ee;
+			list.set(ee.name, ee);
 		}
 		return list;
 	}
@@ -441,7 +443,7 @@ class HChat {
 	 * @returns { EmoteInfo[String] } 
 	 */
 	processFFZSet(elist) {
-		var list = {};
+		var list = new Map();
 		for (var i = 0; i < elist.length; i++) {
 			var e = elist[i];
 
@@ -450,7 +452,7 @@ class HChat {
 			ee.urls = e.urls;
 			ee.name = e.name;
 			ee.provider = hchatEmoteProviderFFZ;
-			list[ee.name] = ee;
+			list.set(ee.name, ee);
 		}
 		return list;
 	}
@@ -462,9 +464,9 @@ class HChat {
 
 class HChatChannel {
 	botList = [];
-	channelEmotes = {};
-	channelTwitchBadges = {};
-	channelCheerMotes = {};
+	channelEmotes = new Map();
+	channelTwitchBadges = new Map();
+	channelCheerMotes = new Map();
 	/**
 	 * @type { HChat }
 	 */
@@ -505,7 +507,7 @@ class HChatChannel {
 		// 7TV channel emotes
 		{
 			try {
-				this.channelEmotes = { ...this.channelEmotes, ...this.hchat.processSevenTVEmotes(sevenTVUser.emote_set.emotes) };
+				this.channelEmotes = new Map([...this.channelEmotes, ...this.hchat.processSevenTVEmotes(sevenTVUser.emote_set.emotes)]);
 			}
 			catch (e) {
 				console.warn("Failed to load 7TV emotes for channel " + this.channelId);
@@ -516,7 +518,7 @@ class HChatChannel {
 		// BTTV channel emotes
 		{
 			try {
-				this.channelEmotes = { ...this.channelEmotes, ...this.hchat.processBTTVEmotes(bttvUser.channelEmotes) };
+				this.channelEmotes = new Map([...this.channelEmotes, ...this.hchat.processBTTVEmotes(bttvUser.channelEmotes)]);
 				this.botList = this.botList.concat(bttvUser.bots);
 			}
 			catch (e) {
@@ -529,7 +531,7 @@ class HChatChannel {
 		{
 			try {
 				for (var k in ffzRoom.sets) {
-					this.channelEmotes = { ...this.channelEmotes, ...this.hchat.processFFZSet(ffzRoom.sets[k].emoticons) };
+					this.channelEmotes = new Map([...this.channelEmotes, ...this.hchat.processFFZSet(ffzRoom.sets[k].emoticons)]);
 				}
 
 				if (ffzRoom.room.vip_badge) {
@@ -624,7 +626,7 @@ class HChatChannel {
 	 * @returns { String[] | Emote[] | Link[] | Mention[] | CheerMote[] }
 	 */
 	parseMessageComponents(input, msg,) {
-		var twitchEmotes = {};
+		var twitchEmotes = new Map();
 
 		if (msg.tags && msg.tags.emotes) {
 			var twitchEmotesStr = msg.tags.emotes;
@@ -654,7 +656,7 @@ class HChatChannel {
 					4: "https://static-cdn.jtvnw.net/emoticons/v2/" + id + "/default/dark/4.0",
 				}
 				e.provider = "twitch";
-				twitchEmotes[name] = e;
+				twitchEmotes.set(name, e);
 			}
 		}
 
@@ -698,14 +700,14 @@ class HChatChannel {
 			}
 
 			if (msg.tags.bits) {
-				var ce = this.channelCheerMotes[s.toLowerCase()] ?? this.hchat.globalCheerMotes[s.toLowerCase()];
+				var ce = this.channelCheerMotes.get(s.toLowerCase()) ?? this.hchat.globalCheerMotes.get(s.toLowerCase());
 				if (ce && msg.tags.bits >= ce.value) {
 					comps.push(ce);
 					continue;
 				}
 			}
 
-			var emote = this.hchat.uniToEmoji[s] ?? this.channelEmotes[s] ?? this.hchat.globalEmotes[s] ?? twitchEmotes[s];
+			var emote = this.hchat.uniToEmoji.get(s) ?? this.channelEmotes.get(s) ?? this.hchat.globalEmotes.get(s) ?? twitchEmotes.get(s);
 			if (emote) {
 				var e = new Emote();
 				e.info = emote;

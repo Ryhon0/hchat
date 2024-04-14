@@ -2,7 +2,7 @@
 // const ChannelName = "CallMeCarsonLIVE".toLowerCase();
 const clientID = "atu01l1tzhhfpzobn87uwwllq5pt4e";
 
-var cachedUserColors = {}
+var cachedUserColors = new Map()
 
 var sendButton;
 var textInput;
@@ -273,8 +273,8 @@ async function loaded() {
 	emoteTabber = new Tabber(emoteTabs, emotePages);
 	emoteTabber.onPageClosed = (page) => { page.innerHTML = "" };
 	emoteTabber.onPageSwitched = (page) => {
-		for (var ek in page.list) {
-			const ei = page.list[ek];
+		for (var ek of page.list.keys) {
+			const ei = page.list.get(ek);
 			var e = new Emote();
 			e.info = ei;
 
@@ -423,12 +423,10 @@ function processMessage(pm, beforeElem = undefined) {
 	if (!pm || !pm.command) return;
 
 	var channel = getChannelById(pm.roomId());
-	if(isNaN(pm.roomId()))
-	{
+	if (isNaN(pm.roomId())) {
 		channel = selectedChannel;
 	}
-	else
-	{
+	else {
 		if (!channel) {
 			console.error("Recieved message in channel " + pm.roomId() + ", but no chat with this name was opened");
 			console.log(pm);
@@ -488,32 +486,159 @@ function processMessage(pm, beforeElem = undefined) {
 	var micon = document.createElement("div");
 	mi.appendChild(micon);
 
-	if (pm.command.command == "CLEARMSG") {
-		const mid = pm.tags["target-msg-id"];
+	try {
 
-		const me = document.getElementById("message#" + mid);
-		if (me) me.classList.add("deleted");
+		if (pm.command.command == "CLEARMSG") {
+			const mid = pm.tags["target-msg-id"];
 
-		var rm = messagesById[mid] ?? pm;
+			const me = document.getElementById("message#" + mid);
+			if (me) me.classList.add("deleted");
 
-		{
-			mi.classList.add("deletion");
+			var rm = messagesById[mid] ?? pm;
 
-			var c = document.createElement("div");
-			c.classList.add("reply");
-			c.appendChild(getFullMessageElement(channel, rm));
-			micon.appendChild(c);
+			{
+				mi.classList.add("deletion");
 
-			var m = document.createElement("div");
-			m.innerText += " Message from " + rm.displayName() + " was deleted";
-			micon.appendChild(m);
+				var c = document.createElement("div");
+				c.classList.add("reply");
+				c.appendChild(getFullMessageElement(channel, rm));
+				micon.appendChild(c);
 
-			if (!beforeElem) channel.timeline.appendChild(mi);
-			else channel.timeline.insertBefore(mi, beforeElem);
-			maintainMessageLimit(channel.timeline);
+				var m = document.createElement("div");
+				m.innerText += " Message from " + rm.displayName() + " was deleted";
+				micon.appendChild(m);
 
-			micon.onclick = (ev) => {
-				const ri = document.getElementById("message#" + mid);
+				if (!beforeElem) channel.timeline.appendChild(mi);
+				else channel.timeline.insertBefore(mi, beforeElem);
+				maintainMessageLimit(channel.timeline);
+
+				micon.onclick = (ev) => {
+					const ri = document.getElementById("message#" + mid);
+					if (ri) {
+						ri.scrollIntoView({ behavior: 'smooth', block: 'center' });
+						ri.classList.add('highlight');
+						setTimeout(() => {
+							ri.classList.remove('highlight');
+						}, 1000);
+						ev.preventDefault();
+					}
+				};
+			}
+			return;
+		}
+
+		if (["PRIVMSG", "USERNOTICE", "NOTICE"].indexOf(pm.command.command) == -1) return;
+
+		if (pm.content[pm.content.length - 1] == '\r')
+			pm.content = pm.content.substring(0, pm.content.length - 1);
+
+		// Recent messages deleted tag
+		if (pm.tags["rm-deleted"])
+			mi.classList.add("deleted");
+
+		// Sub messages, raids
+		if (pm.command.command == "USERNOTICE" || pm.command.command == "NOTICE") {
+			switch (pm.tags["msg-id"]) {
+				case "subgift":
+				case "submysterygift":
+				case "resub":
+				case "sub":
+					var subFrom = pm.tags["display-name"];
+					var subFromId = pm.tags["user-id"];
+
+					mi.classList.add("sub");
+					{
+						var text = pm.tags["system-msg"];
+						var li = document.createElement("div");
+						li.innerText = text;
+
+						micon.appendChild(li);
+					}
+
+					if (!pm.command.channel) {
+						if (!beforeElem) channel.timeline.appendChild(mi);
+						else channel.timeline.insertBefore(mi, beforeElem);
+						return;
+					}
+					break;
+				case "raid":
+					var raidFrom = pm.tags["msg-param-displayName"];
+					var raidFromId = pm.tags["user-id"];
+
+					mi.classList.add("raid");
+					{
+						var text = pm.tags["system-msg"];
+						var li = document.createElement("li");
+						li.classList.add("raid");
+						li.innerText = text.replace("\n", "");
+
+						micon.appendChild(li);
+					}
+					if (!pm.command.channel) {
+						if (!beforeElem) channel.timeline.appendChild(mi);
+						else channel.timeline.insertBefore(mi, beforeElem);
+						return;
+					}
+					break;
+				default:
+					console.log("Unhandled USERNOTICE, msg-id: " + pm.tags["msg-id"]);
+					console.log(pm);
+				case "msg_ratelimit":
+					console.log(pm.tags["msg-id"]);
+					mi.appendChild(document.createTextNode(pm.content));
+
+					if (!beforeElem) channel.timeline.appendChild(mi);
+					else channel.timeline.insertBefore(mi, beforeElem);
+
+					return;
+			}
+		}
+
+		// Recent messages duplicates
+		if (messagesById[pm.messageId()]) return;
+
+		messagesById[pm.messageId()] = pm;
+
+		var mentioned = false;
+
+		// Reply
+		const replyId = pm.tags["reply-parent-msg-id"];
+		if (replyId) {
+			var replyElem = document.createElement("div");
+			replyElem.innerHTML = "Replying to ";
+			replyElem.classList.add("reply");
+
+			// Remove @mention
+			var replyLogin = pm.tags["reply-parent-user-login"];
+			if (pm.content.startsWith("ACTION") && pm.content[pm.content.length - 1] == "") {
+				pm.tcontent = "ACTION" + pm.content.substring("ACTION".length + 2 + replyLogin.length);
+			}
+			else pm.tcontent = pm.content.substring(2 + replyLogin.length);
+
+			var rm = messagesById[replyId];
+			if (!rm) {
+				rm = new Message();
+				rm.content = pm.tags["reply-parent-msg-body"];
+				rm.tags["display-name"] = pm.tags["reply-parent-display-name"];
+				rm.tags["user-id"] = pm.tags["reply-parent-user-id"];
+				rm.user = replyLogin;
+				rm.tags.login = replyLogin;
+				rm.tags.color = cachedUserColors.get(replyLogin);
+			}
+
+			// Check if replying to one of the accounts
+			{
+				for (var a of accounts) {
+					if (Number(a.id) == rm.userId()) {
+						mentioned = true;
+						break;
+					}
+				}
+			}
+
+			replyElem.appendChild(getFullMessageElement(channel, rm));
+			replyElem.onclick = (ev) => {
+				const ri = document.getElementById("message#" + replyId);
 				if (ri) {
 					ri.scrollIntoView({ behavior: 'smooth', block: 'center' });
 					ri.classList.add('highlight');
@@ -523,176 +648,56 @@ function processMessage(pm, beforeElem = undefined) {
 					ev.preventDefault();
 				}
 			};
-		}
-		return;
-	}
 
-	if (["PRIVMSG", "USERNOTICE", "NOTICE"].indexOf(pm.command.command) == -1) return;
-
-	if (pm.content[pm.content.length - 1] == '\r')
-		pm.content = pm.content.substring(0, pm.content.length - 1);
-
-	// Recent messages deleted tag
-	if (pm.tags["rm-deleted"])
-		mi.classList.add("deleted");
-
-	// Sub messages, raids
-	if (pm.command.command == "USERNOTICE" || pm.command.command == "NOTICE") {
-		switch (pm.tags["msg-id"]) {
-			case "subgift":
-			case "submysterygift":
-			case "resub":
-			case "sub":
-				var subFrom = pm.tags["display-name"];
-				var subFromId = pm.tags["user-id"];
-
-				mi.classList.add("sub");
-				{
-					var text = pm.tags["system-msg"];
-					var li = document.createElement("div");
-					li.innerText = text;
-
-					micon.appendChild(li);
-				}
-
-				if (!pm.command.channel) {
-					if (!beforeElem) channel.timeline.appendChild(mi);
-					else channel.timeline.insertBefore(mi, beforeElem);
-					return;
-				}
-				break;
-			case "raid":
-				var raidFrom = pm.tags["msg-param-displayName"];
-				var raidFromId = pm.tags["user-id"];
-
-				mi.classList.add("raid");
-				{
-					var text = pm.tags["system-msg"];
-					var li = document.createElement("li");
-					li.classList.add("raid");
-					li.innerText = text.replace("\n", "");
-
-					micon.appendChild(li);
-				}
-				if (!pm.command.channel) {
-					if (!beforeElem) channel.timeline.appendChild(mi);
-					else channel.timeline.insertBefore(mi, beforeElem);
-					return;
-				}
-				break;
-			default:
-				console.log("Unhandled USERNOTICE, msg-id: " + pm.tags["msg-id"]);
-				console.log(pm);
-			case "msg_ratelimit":
-				console.log(pm.tags["msg-id"]);
-				mi.appendChild(document.createTextNode(pm.content));
-
-				if (!beforeElem) channel.timeline.appendChild(mi);
-				else channel.timeline.insertBefore(mi, beforeElem);
-				
-				return;
-		}
-	}
-
-	// Recent messages duplicates
-	if (messagesById[pm.messageId()]) return;
-
-	messagesById[pm.messageId()] = pm;
-
-	var mentioned = false;
-
-	// Reply
-	const replyId = pm.tags["reply-parent-msg-id"];
-	if (replyId) {
-		var replyElem = document.createElement("div");
-		replyElem.innerHTML = "Replying to ";
-		replyElem.classList.add("reply");
-
-		// Remove @mention
-		var replyLogin = pm.tags["reply-parent-user-login"];
-		if (pm.content.startsWith("ACTION") && pm.content[pm.content.length - 1] == "") {
-			pm.tcontent = "ACTION" + pm.content.substring("ACTION".length + 2 + replyLogin.length);
-		}
-		else pm.tcontent = pm.content.substring(2 + replyLogin.length);
-
-		var rm = messagesById[replyId];
-		if (!rm) {
-			rm = new Message();
-			rm.content = pm.tags["reply-parent-msg-body"];
-			rm.tags["display-name"] = pm.tags["reply-parent-display-name"];
-			rm.tags["user-id"] = pm.tags["reply-parent-user-id"];
-			rm.user = replyLogin;
-			rm.tags.login = replyLogin;
-			rm.tags.color = cachedUserColors[replyLogin];
+			micon.appendChild(replyElem);
 		}
 
-		// Check if replying to one of the accounts
+		// Content 
+		// The actual message sent by the user
 		{
-			for (var a of accounts) {
-				if (Number(a.id) == rm.userId()) {
-					mentioned = true;
-					break;
-				}
-			}
-		}
+			var contentElem = document.createElement("div");
+			contentElem.classList.add("content");
+			micon.appendChild(contentElem);
 
-		replyElem.appendChild(getFullMessageElement(channel, rm));
-		replyElem.onclick = (ev) => {
-			const ri = document.getElementById("message#" + replyId);
-			if (ri) {
-				ri.scrollIntoView({ behavior: 'smooth', block: 'center' });
-				ri.classList.add('highlight');
-				setTimeout(() => {
-					ri.classList.remove('highlight');
-				}, 1000);
-				ev.preventDefault();
-			}
-		};
-
-		micon.appendChild(replyElem);
-	}
-
-	// Content 
-	// The actual message sent by the user
-	{
-		var contentElem = document.createElement("div");
-		contentElem.classList.add("content");
-		micon.appendChild(contentElem);
-
-		// Full message
-		{
-			contentElem.appendChild(getFullMessageElement(channel, pm, (name) => {
-				if (!mentioned) {
-					for (var a of accounts) {
-						if (a.name.toLowerCase() == name.toLowerCase()) {
-							mentioned = true;
-							break;
+			// Full message
+			{
+				contentElem.appendChild(getFullMessageElement(channel, pm, (name) => {
+					if (!mentioned) {
+						for (var a of accounts) {
+							if (a.name.toLowerCase() == name.toLowerCase()) {
+								mentioned = true;
+								break;
+							}
 						}
 					}
-				}
-			}));
+				}));
+			}
+		}
+
+		// Highlight colors
+		{
+			// Redeem
+			{
+				if (pm.tags["custom-reward-id"] || pm.tags["msg-id"] == "highlighted-message")
+					mi.classList.add("redeem");
+			}
+
+			// First message
+			{
+				if (pm.tags["first-msg"] == "1")
+					mi.classList.add("first");
+			}
+
+			// Mention
+			{
+				if (mentioned)
+					mi.classList.add("mentioned");
+			}
 		}
 	}
-
-	// Highlight colors
-	{
-		// Redeem
-		{
-			if (pm.tags["custom-reward-id"] || pm.tags["msg-id"] == "highlighted-message")
-				mi.classList.add("redeem");
-		}
-
-		// First message
-		{
-			if (pm.tags["first-msg"] == "1")
-				mi.classList.add("first");
-		}
-
-		// Mention
-		{
-			if (mentioned)
-				mi.classList.add("mentioned");
-		}
+	catch (e) {
+		micon.appendChild(document.createTextNode("" + e));
+		console.error(e);
 	}
 
 	if (!beforeElem) channel.timeline.appendChild(mi);
@@ -729,6 +734,7 @@ function getBadgeElement(channel, pm) {
 	var blist = channel.hchannel.getBadgesForMessage(pm);
 	for (const ba of blist) {
 		const bi = document.createElement("img");
+		if (ba == undefined) continue;
 		bi.src = ba.img;
 		// bi.alt = ba.title;
 		bi.style.background = ba.backgroundStyle;
@@ -778,7 +784,7 @@ function getMessageComponentsElement(channel, pm, mentionCb = undefined) {
 			var s = document.createElement("span");
 			s.classList.add("mention");
 			s.innerText = "@" + c.username;
-			s.style.color = cachedUserColors[c.username.toLowerCase()];
+			s.style.color = cachedUserColors.get(c.username.toLowerCase());
 			ms.appendChild(s);
 
 			if (mentionCb) mentionCb(c.username);
@@ -817,7 +823,7 @@ function getFullMessageElement(channel, pm, mentionCb = undefined) {
 	var mi = document.createElement("span");
 
 	var namecolor = pm.tags.color;
-	cachedUserColors[pm.user] = namecolor;
+	cachedUserColors.set(pm.user, namecolor);
 
 	var isAction = false;
 	// TODO: Don't modify the content
@@ -860,6 +866,10 @@ function getFullMessageElement(channel, pm, mentionCb = undefined) {
  */
 function createEmoteElement(c) {
 	var info = c.info;
+
+	if (info instanceof Function) {
+		debugger;
+	}
 
 	const img = document.createElement("img");
 	img.src = c.info.getImageURL(settings.emoteSize);
@@ -1211,6 +1221,7 @@ async function openChannelTab(name, id = undefined) {
 		var msg = await new RecentMessagesAPI().getRecentMessages(ch.name.toLowerCase(), settings.recentMessagesLimit);
 		if (!msg.erorr) {
 			var stopper = document.createElement("div");
+			stopper.innerText = "Loading recent messages..."
 			if (ch.timeline.firstChild)
 				ch.timeline.appendChild(stopper);
 			else ch.timeline.insertBefore(stopper, ch.firstChild);
@@ -1392,8 +1403,7 @@ function saveAccounts() {
 
 function onAccountReady(acc) {
 	acc.irc = new ChatClient(acc.name.toLowerCase(), acc.token);
-	acc.irc.onMessage = (msg) =>
-	{
+	acc.irc.onMessage = (msg) => {
 		processMessage(msg);
 	};
 }
