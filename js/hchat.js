@@ -341,14 +341,13 @@ class HChat {
 				 * @returns { Badge[] }
 				 */
 				function getFFZBadges(list, msg, hchannel) {
-					var uname = msg.username().toLowerCase();
 					var uid = Number(msg.tags["user-id"]);
 
 					var globalbot = false;
 					for (var i in hchannel.hchat.globalFFZBadgeOwners) {
 						if (i == "2" && hchannel.ffzBotBadgeOwnerIDs.indexOf(uid) != -1)
 							list.push(hchannel.hchat.globalFFZBadges.get(i));
-						else if (hchannel.hchat.globalFFZBadgeOwners[i].indexOf(uname) != -1) {
+						else if (hchannel.hchat.globalFFZBadgeOwners[i].indexOf(uid) != -1) {
 							list.push(hchannel.hchat.globalFFZBadges.get(i));
 						}
 					}
