@@ -273,7 +273,7 @@ async function loaded() {
 	emoteTabber = new Tabber(emoteTabs, emotePages);
 	emoteTabber.onPageClosed = (page) => { page.innerHTML = "" };
 	emoteTabber.onPageSwitched = (page) => {
-		for (var ek of page.list.keys) {
+		for (var ek of page.list.keys()) {
 			const ei = page.list.get(ek);
 			var e = new Emote();
 			e.info = ei;
