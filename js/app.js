@@ -324,6 +324,8 @@ async function loaded() {
 
 	document.onkeydown = (e) => {
 		if (!document.activeElement || (document.activeElement.tagName != "input" && document.activeElement.tagName != "textarea")) {
+			if(e.ctrlKey) return;
+			
 			textInput.focus();
 		}
 	}
