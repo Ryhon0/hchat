@@ -21,7 +21,10 @@ var dropZone;
 var tooltip;
 
 async function selfUpdate() {
-	console.log("Checking for update...");
+	var loading = document.getElementById("loadingScreen");
+	var loadingProgress = document.getElementById("loadingScreenInfo");
+
+	loadingProgress.innerText = "Checking for update...";
 
 	var cachedDate = localStorage.getItem("lastUpdated");
 	if (!cachedDate) {
@@ -41,23 +44,36 @@ async function selfUpdate() {
 	console.log("Fresh date: " + freshDate);
 
 	if (freshDate > cachedDate) {
-		console.log("Updating scripts...");
+		var toUpdate = [];
 		for (var s of document.getElementsByTagName("script")) {
 			if (s.src) {
-				await fetch(s.src, { cache: 'reload' });
+				toUpdate.push(s.src);
 			}
 		}
 
-		console.log("Updating styles...");
 		for (var l of document.getElementsByTagName("link")) {
 			if (l.rel == "stylesheet") {
-				await fetch(l.href, { cache: 'reload' });
+				toUpdate.push(l.href);
 			}
 		}
+
+		for(var i = 0; i<toUpdate.length; i++)
+		{
+			loadingProgress.innerText = "Updating ("+(i+1)+"/"+toUpdate.length+")...";
+			
+			var l = toUpdate[i];
+			await fetch(l, { cache: 'reload' });
+		}
+
 
 		localStorage.setItem("lastUpdated", freshDate.toGMTString());
 		location.reload();
+		loadingProgress.innerText = "Reloading...";
+		return;
 	}
+
+	loadingProgress.innerText = "Welcome!";
+	loading.classList.add("loaded");
 }
 
 async function loaded() {
@@ -1228,7 +1244,6 @@ async function openChannelTab(name, id = undefined) {
 				for (var m of msg.messages) {
 					processMessage(parseMessage(m), stopper);
 				}
-
 				stopper.remove();
 			}
 			else {

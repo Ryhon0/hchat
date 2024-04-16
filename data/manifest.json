@@ -3,6 +3,7 @@
 	"start_url": "/",
 	"display": "standalone",
 	"description": "Lightweight Twitch chat client",
+	"theme_color": "#333",
 	"icons": [
 		{
 			"src": "/icon.png",
