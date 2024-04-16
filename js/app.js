@@ -956,6 +956,7 @@ function showTooltip(parent, what) {
 		tooltip.remove();
 
 	tooltip = what;
+	document.body.appendChild(tooltip);
 
 	what.classList.add("tooltip");
 
@@ -963,11 +964,10 @@ function showTooltip(parent, what) {
 
 	var x, y;
 	if (parent instanceof Element) {
-		parent.appendChild(what);
 		var parentBbox = parent.getBoundingClientRect();
 		x = (parentBbox.right - (parentBbox.width / 2)) - (tipBbox.width / 2)
 		y = parentBbox.bottom;
-		parent.onmouseleave = () => { what.remove() };
+		parent.onmouseout = () => { what.remove() };
 	}
 	else {
 		x = parent[0];
