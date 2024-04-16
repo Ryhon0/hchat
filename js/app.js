@@ -1218,23 +1218,23 @@ async function openChannelTab(name, id = undefined) {
 	ch.hchannel.init().then(async () => {
 		ch.hchannel.getChannelCheermotes().then(() => { });
 
-		var msg = await new RecentMessagesAPI().getRecentMessages(ch.name.toLowerCase(), settings.recentMessagesLimit);
-		if (!msg.erorr) {
-			var stopper = document.createElement("div");
-			stopper.innerText = "Loading recent messages..."
-			if (ch.timeline.firstChild)
-				ch.timeline.appendChild(stopper);
-			else ch.timeline.insertBefore(stopper, ch.firstChild);
+		var stopper = createElementWithText("div", "Loading recent messages...");
+		if (ch.timeline.firstChild)
+			ch.timeline.appendChild(stopper);
+		else ch.timeline.insertBefore(stopper, ch.firstChild);
 
-			for (var m of msg.messages) {
-				processMessage(parseMessage(m), stopper);
+		new RecentMessagesAPI().getRecentMessages(ch.name.toLowerCase(), settings.recentMessagesLimit).then(msg => {
+			if (!msg.erorr) {
+				for (var m of msg.messages) {
+					processMessage(parseMessage(m), stopper);
+				}
+
+				stopper.remove();
 			}
-
-			stopper.remove();
-		}
-		else {
-			ch.timeline.appendChild(document.createTextNode("Failed to load message history" + msg.erorr_code + " - " + msg.erorr));
-		}
+			else {
+				stopper.innerText = "Failed to load message history" + msg.erorr_code + " - " + msg.erorr;
+			}
+		});
 	});
 }
 
