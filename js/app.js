@@ -168,6 +168,7 @@ async function loaded() {
 	channelTabber.onPageSwitched = (page) => {
 		selectedChannel = page.channel;
 
+		setReply(undefined);
 		closeEmojiList();
 
 		if (selectedChannel)
@@ -484,7 +485,7 @@ function processMessage(pm, beforeElem = undefined) {
 			});
 		}, 0);
 
-		showTooltip([ev.clientX, ev.clientY], menu);
+		showTooltip([ev.clientX, ev.clientY], menu, true);
 		ev.preventDefault();
 	}
 
@@ -951,7 +952,7 @@ function authRedirect() {
  * @param { Element } parent 
  * @param { Element } what 
  */
-function showTooltip(parent, what) {
+function showTooltip(parent, what, clickable = false) {
 	if (tooltip)
 		tooltip.remove();
 
@@ -959,6 +960,8 @@ function showTooltip(parent, what) {
 	document.body.appendChild(tooltip);
 
 	what.classList.add("tooltip");
+	if(clickable)
+		what.classList.add("clickableTooltip");
 
 	var tipBbox = what.getBoundingClientRect();
 

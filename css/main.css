@@ -313,6 +313,11 @@ button {
 	position: absolute;
 }
 
+.clickableTooltip
+{
+	pointer-events: all;
+}
+
 .emoteTooltip {
 	display: flex;
 	flex-direction: column;
