@@ -73,8 +73,8 @@ body {
 #topBar {
 	display: flex;
 	width: 100%;
-	min-height: 3em;
-	height: 3em;
+	min-height: 2.5em;
+	height: 2.5em;
 	background-color: #222222;
 }
 
@@ -88,11 +88,11 @@ body {
 
 #channelList>* {
 	display: flex;
-	padding: 1em;
+	padding: 0.5em;
 	align-items: center;
 	background-color: #363636;
-	margin: 0.25em;
-	gap: 0.5em;
+	gap: 0.25em;
+	margin: 0.1em;
 }
 
 #channelList>.active {
