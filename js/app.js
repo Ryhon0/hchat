@@ -57,10 +57,9 @@ async function selfUpdate() {
 			}
 		}
 
-		for(var i = 0; i<toUpdate.length; i++)
-		{
-			loadingProgress.innerText = "Updating ("+(i+1)+"/"+toUpdate.length+")...";
-			
+		for (var i = 0; i < toUpdate.length; i++) {
+			loadingProgress.innerText = "Updating (" + (i + 1) + "/" + toUpdate.length + ")...";
+
 			var l = toUpdate[i];
 			await fetch(l, { cache: 'reload' });
 		}
@@ -316,7 +315,18 @@ async function loaded() {
 				uploadFile(f);
 			ev.preventDefault();
 		}
+		else if (ev.clipboardData.getData("text")) {
+			if (!document.activeElement || (document.activeElement.tagName != "input" && document.activeElement.tagName != "textarea")) {
+				textInput.focus();
+			}
+		}
 	};
+
+	document.onkeydown = (e) => {
+		if (!document.activeElement || (document.activeElement.tagName != "input" && document.activeElement.tagName != "textarea")) {
+			textInput.focus();
+		}
+	}
 
 	onAccountChanged();
 
@@ -960,7 +970,7 @@ function showTooltip(parent, what, clickable = false) {
 	document.body.appendChild(tooltip);
 
 	what.classList.add("tooltip");
-	if(clickable)
+	if (clickable)
 		what.classList.add("clickableTooltip");
 
 	var tipBbox = what.getBoundingClientRect();
@@ -1692,10 +1702,9 @@ class Tabber {
 		this.pageList = pages
 
 		setInterval(() => {
-			if(!this.pageList.contains(this.currentPage))
-			{
+			if (!this.pageList.contains(this.currentPage)) {
 				var tab = this.tabList.children[0];
-				if(tab && tab.page)
+				if (tab && tab.page)
 					this.switchPage(tab.page);
 			}
 		}, 100);
@@ -1725,8 +1734,7 @@ class Tabber {
 
 		page.remove();
 
-		if (page == this.currentPage)
-		{
+		if (page == this.currentPage) {
 			this.currentPage = null;
 			this.switchPage(this.tabList.children[0].page);
 		}
@@ -1739,7 +1747,7 @@ class Tabber {
 	}
 
 	switchPage(page) {
-		if(page == this.currentPage) return;
+		if (page == this.currentPage) return;
 
 		if (this.currentPage) this.onPageClosed(this.currentPage);
 
