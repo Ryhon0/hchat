@@ -1534,12 +1534,11 @@ function openSettings() {
 
 	var tab = document.createElement("button");
 	tab.innerText = "Settings";
-	tab.onclick = () => { switchTab(settingsPage); };
 
 	const closeButton = document.createElement("button");
 	closeButton.classList.add("closeButton");
 	closeButton.classList.add("bi-x-lg");
-	closeButton.onclick = () => { channelTabber.removePage(settingsPage); settingsPage = undefined; };
+	closeButton.onclick = (e) => { channelTabber.removePage(settingsPage); settingsPage = undefined; e.preventDefault(); };
 	tab.appendChild(closeButton);
 	channelList.appendChild(tab);
 
@@ -1688,14 +1687,24 @@ class Tabber {
 	constructor(tabs, pages) {
 		this.tabList = tabs
 		this.pageList = pages
+
+		setInterval(() => {
+			if(!this.pageList.contains(this.currentPage))
+			{
+				var tab = this.tabList.children[0];
+				if(tab && tab.page)
+					this.switchPage(tab.page);
+			}
+		}, 100);
 	}
 
 	addPage(tab, page) {
 		tab.page = page;
 		page.tab = tab;
 
-		tab.onclick = () => {
+		tab.onclick = (e) => {
 			this.switchPage(page);
+			e.preventDefault();
 		};
 
 		this.tabList.appendChild(tab);
@@ -1708,13 +1717,16 @@ class Tabber {
 	}
 
 	removePage(page) {
-		if (page == this.currentPage)
-			this.currentPage = null;
-
 		if (page.tab)
 			page.tab.remove();
 
 		page.remove();
+
+		if (page == this.currentPage)
+		{
+			this.currentPage = null;
+			this.switchPage(this.tabList.children[0].page);
+		}
 	}
 
 	removeAllPages() {
@@ -1724,6 +1736,8 @@ class Tabber {
 	}
 
 	switchPage(page) {
+		if(page == this.currentPage) return;
+
 		if (this.currentPage) this.onPageClosed(this.currentPage);
 
 		this.currentPage = page;
