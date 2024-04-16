@@ -72,7 +72,7 @@ async function selfUpdate() {
 		return;
 	}
 
-	loadingProgress.innerText = "Welcome!";
+	loadingProgress.innerText = "";
 	loading.classList.add("loaded");
 }
 
