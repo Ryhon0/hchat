@@ -323,7 +323,7 @@ async function loaded() {
 	};
 
 	document.onkeydown = (e) => {
-		if (!document.activeElement || (document.activeElement.tagName != "input" && document.activeElement.tagName != "textarea")) {
+		if (!document.activeElement || (document.activeElement.tagName.toLowerCase() != "input" && document.activeElement.tagName.toLowerCase() != "textarea")) {
 			if(e.ctrlKey) return;
 			
 			textInput.focus();
