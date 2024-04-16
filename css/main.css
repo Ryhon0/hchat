@@ -181,7 +181,12 @@ button {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
+	
+	overflow-wrap: break-word;
+	word-wrap: break-word;
 	word-break: break-all;
+	word-break: break-word;
+	hyphens: auto;
 }
 
 @keyframes replyHighlight {
@@ -206,7 +211,6 @@ button {
 
 .timeline>* a.link {
 	color: #3a3ae5;
-	word-break: break-all;
 }
 
 .timeline>* {
