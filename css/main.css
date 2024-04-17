@@ -460,3 +460,8 @@ input:placeholder-shown {
 {
 	display: none;
 }
+
+.hideappinstallbutton #installButton
+{
+	display: none;
+}

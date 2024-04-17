@@ -1681,6 +1681,7 @@ function openSettings() {
 			settingsPage.appendChild(createElementWithText("h1", "Settings"));
 
 			createNumberInput("settings.zoom", "Zoom", "", 0.5, 2.0, 0.1);
+			createCheckbox("settings.hideAppInstallButton", "Hide app install button");
 			createCheckbox("settings.hideHchatUserBadge", "Hide HChat user badges");
 			createCheckbox("settings.hideHchatNonce", "Hide my HChat user badge");
 			createNumberInput("settings.maxMessages", "Max messages", "The maximum amount of message in a timeline", 50, Infinity);
@@ -1722,9 +1723,21 @@ class Settings {
 					document.body.classList.remove("hidehchatuserbadge");
 			},
 		})
+
+		Object.defineProperty(this, "hideAppInstallButton", {
+			get: () => { return this._hideAppInstallButton },
+			set: (v) => {
+				this._hideAppInstallButton = v;
+				if (v)
+					document.body.classList.add("hideappinstallbutton");
+				else
+					document.body.classList.remove("hideappinstallbutton");
+			},
+		})
 	}
 
 	_zoom = 1
+	_hideAppInstallButton = false
 	_hideHchatUserBadge = false
 	hideHchatNonce = false
 
