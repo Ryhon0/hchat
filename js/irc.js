@@ -239,6 +239,8 @@ function escapeTag(str)
 
 function tagsToString(tags)
 {
+	if(!Object.keys(tags).length) return "";
+
 	var s = "@";
 	var first = true;
 	for(var k in tags)
@@ -253,5 +255,5 @@ function tagsToString(tags)
 		s += "=";
 		s += escapeTag(String(v));
 	}
-	return s;
+	return s + " ";
 }

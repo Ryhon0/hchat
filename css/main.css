@@ -455,3 +455,8 @@ input:placeholder-shown {
 {
 	width: 7em;
 }
+
+.hidehchatuserbadge .badge-hchat
+{
+	display: none;
+}

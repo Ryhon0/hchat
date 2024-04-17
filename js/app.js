@@ -1081,7 +1081,7 @@ class ChatClient {
 	}
 
 	sendMessage(tags, channel, message) {
-		this.send(tagsToString(tags) + " PRIVMSG #" + channel.toLowerCase() + " :" + message);
+		this.send(tagsToString(tags) + "PRIVMSG #" + channel.toLowerCase() + " :" + message);
 	}
 }
 
@@ -1346,7 +1346,8 @@ function setReply(id) {
 function sendMessage(msg) {
 	var ch = selectedChannel.name;
 
-	var tags = { "client-nonce": "hchat," };
+	var tags = {};
+	if (!settings.hideHchatNonce) tags["client-nonce"] = "hchat,";
 	if (replyingToId) tags["reply-parent-msg-id"] = replyingToId;
 	activeAccount.irc.sendMessage(tags, ch, msg);
 }
@@ -1576,7 +1577,7 @@ function openSettings() {
 	function setIndexed(path, value) {
 		var split = path.split('.');
 		var finalProp = split[split.length - 1];
-		split = split.splice(0, split.length-1);
+		split = split.splice(0, split.length - 1);
 
 		obj = this;
 
@@ -1680,6 +1681,8 @@ function openSettings() {
 			settingsPage.appendChild(createElementWithText("h1", "Settings"));
 
 			createNumberInput("settings.zoom", "Zoom", "", 0.5, 2.0, 0.1);
+			createCheckbox("settings.hideHchatUserBadge", "Hide HChat user badges");
+			createCheckbox("settings.hideHchatNonce", "Hide my HChat user badge");
 			createNumberInput("settings.maxMessages", "Max messages", "The maximum amount of message in a timeline", 50, Infinity);
 			createNumberInput("settings.emoteSize", "Emote resolution", "The maximum vertical emote resolution", 1, 4);
 
@@ -1703,15 +1706,28 @@ function createElementWithText(type, text) {
 }
 
 class Settings {
-	constructor()
-	{
+	constructor() {
 		Object.defineProperty(this, "zoom", {
-			get: () => {return this._zoom},
-			set: (v) => {this._zoom = v; document.body.style.zoom = v},
+			get: () => { return this._zoom },
+			set: (v) => { this._zoom = v; document.body.style.zoom = v },
+		})
+
+		Object.defineProperty(this, "hideHchatUserBadge", {
+			get: () => { return this._hideHchatUserBadge },
+			set: (v) => {
+				this._hideHchatUserBadge = v;
+				if (v)
+					document.body.classList.add("hidehchatuserbadge");
+				else
+					document.body.classList.remove("hidehchatuserbadge");
+			},
 		})
 	}
 
 	_zoom = 1
+	_hideHchatUserBadge = false
+	hideHchatNonce = false
+
 	emoteSize = 3
 
 	maxMessages = 1000
@@ -1738,6 +1754,7 @@ function loadSettings() {
 	var j = JSON.parse(s);
 	settings = Object.assign(settings, j);
 	settings.zoom = settings.zoom;
+	settings.hideHchatUserBadge = settings.hideHchatUserBadge;
 }
 
 class Tabber {
