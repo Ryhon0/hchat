@@ -765,6 +765,8 @@ function getBadgeElement(channel, pm) {
 		const bi = document.createElement("img");
 		if (ba == undefined) continue;
 		bi.src = ba.img;
+		bi.classList.add("badge");
+		bi.classList.add("badge-" + ba.id);
 		// bi.alt = ba.title;
 		bi.style.background = ba.backgroundStyle;
 		bl.appendChild(bi);
@@ -990,13 +992,13 @@ function showTooltip(parent, what, clickable = false) {
 		document.body.appendChild(what);
 	}
 
-	if (y + tipBbox.height > document.documentElement.clientHeight) {
-		y = document.documentElement.clientHeight - tipBbox.height - 1;
+	if (y + tipBbox.height > document.body.clientHeight) {
+		y = document.body.clientHeight - tipBbox.height - 1;
 	}
 
 	if (x < 0) x = 0;
-	if (x + tipBbox.width > document.documentElement.clientWidth) {
-		x = document.documentElement.clientWidth - tipBbox.width;
+	if (x + tipBbox.width > document.body.clientWidth) {
+		x = document.body.clientWidth - tipBbox.width;
 	}
 
 	what.style.top = y + "px";
