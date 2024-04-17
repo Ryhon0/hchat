@@ -424,3 +424,34 @@ input:placeholder-shown {
 	flex-direction: column;
 	width: 15em;
 }
+
+.settings{
+	padding: 3em;
+	max-width: 30em;
+	margin: auto;
+}
+
+.settings h2
+{
+	margin: 0.25em 0em;
+}
+
+.settings h3
+{
+	margin: 0.25em 0em;
+}
+
+.settings input[type=text]
+{
+	width: 100%;
+}
+
+.settings input[type=range]
+{
+	width: calc(100% - 7.9em);
+}
+
+.settings input[type=number].forSlider
+{
+	width: 7em;
+}

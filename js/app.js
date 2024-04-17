@@ -324,8 +324,8 @@ async function loaded() {
 
 	document.onkeydown = (e) => {
 		if (!document.activeElement || (document.activeElement.tagName.toLowerCase() != "input" && document.activeElement.tagName.toLowerCase() != "textarea")) {
-			if(e.ctrlKey) return;
-			
+			if (e.ctrlKey) return;
+
 			textInput.focus();
 		}
 	}
@@ -1546,6 +1546,7 @@ function openSettings() {
 	}
 
 	settingsPage = document.createElement("div");
+	settingsPage.classList.add("settings");
 
 	var tab = document.createElement("button");
 	tab.innerText = "Settings";
@@ -1560,38 +1561,88 @@ function openSettings() {
 	channelTabber.addPage(tab, settingsPage);
 	channelTabber.switchPage(settingsPage);
 
+	function getIndexed(path) {
+		var split = path.split('.');
+
+		obj = this;
+		for (var p of split)
+			obj = obj[p];
+
+		return obj;
+	}
+
+	function setIndexed(path, value) {
+		var split = path.split('.');
+		var finalProp = split[split.length - 1];
+		split = split.splice(0, split.length-1);
+
+		obj = this;
+
+		for (var p of split)
+			obj = obj[p];
+
+		return obj[finalProp] = value;
+	}
+
 	// Content
 	{
 		function createCheckbox(key, text) {
 			const d = document.createElement("div");
 
 			const cb = document.createElement("input");
-			cb.id = "setting-" + key;
 			cb.type = "checkbox";
-			cb.checked = settings[key];
+			cb.checked = getIndexed(key);
 
-			cb.onchange = () => { settings[key] = cb.checked; saveSettings(); };
+			cb.onchange = () => { setIndexed(key, cb.checked); saveSettings(); };
 
 			const l = document.createElement("label");
 			l.innerText = text;
-			l.for = cb.id;
+			l.onclick = () => cb.click();
 
 			d.appendChild(cb);
 			d.appendChild(l);
 
-			return d;
+			settingsPage.appendChild(d);
 		}
 
-		function createNumberInput(key, text, min, max, step = 1) {
-			const d = document.createElement("div");
+		function createNumberInput(key, title, description, min, max, step = 1) {
+			settingsPage.appendChild(createElementWithText("h3", title));
+			settingsPage.appendChild(createElementWithText("div", description));
 
+			const si = document.createElement("input");
 			const ni = document.createElement("input");
-			ni.id = "setting-" + key;
+
+			if (min != Infinity && max != Infinity) {
+				si.type = "range";
+				si.min = min;
+				si.max = max;
+				si.step = step;
+				si.value = getIndexed(key);
+
+				si.oninput = () => {
+					var val = si.value;
+					if (val < min) {
+						val = min;
+						si.value = val;
+					}
+					else if (val > max) {
+						val = max;
+						si.value = val;
+					}
+
+					setIndexed(key, si.value);
+					ni.value = si.value;
+					saveSettings();
+				};
+				settingsPage.appendChild(si);
+			}
+
 			ni.type = "number";
+			ni.classList.add("forSlider");
 			ni.min = min;
 			ni.max = max;
 			ni.step = step;
-			ni.value = settings[key];
+			ni.value = getIndexed(key);
 			ni.oninput = () => {
 				var val = ni.value;
 				if (val < min) {
@@ -1603,54 +1654,42 @@ function openSettings() {
 					ni.value = val;
 				}
 
-				settings[key] = ni.value;
+				setIndexed(key, ni.value);
+				si.value = ni.value;
 				saveSettings();
 			};
 
-			const l = document.createElement("label");
-			l.innerText = text;
-			l.for = ni.id;
-
-			d.appendChild(ni);
-			d.appendChild(l);
-
-			return d;
+			settingsPage.appendChild(ni);
 		}
 
-		function createTextbox(key, text) {
-			const d = document.createElement("div");
+		function createTextbox(key, title, description) {
+			settingsPage.appendChild(createElementWithText("h3", title));
+			settingsPage.appendChild(createElementWithText("div", description));
 
 			const tb = document.createElement("input");
+			tb.type = "text";
 			tb.id = "setting-" + key;
-			tb.value = settings[key];
-
-			tb.onchange = () => { settings[key] = tb.value; saveSettings(); };
-
-			const l = document.createElement("label");
-			l.innerText = text;
-			l.for = tb.id;
-
-			d.appendChild(tb);
-			d.appendChild(l);
-
-			return d;
+			tb.value = getIndexed(key);
+			tb.onchange = () => { setIndexed(key, tb.value); saveSettings(); };
+			settingsPage.appendChild(tb);
 		}
 
 		{
 			settingsPage.appendChild(createElementWithText("h1", "Settings"));
 
-			settingsPage.appendChild(createNumberInput("maxMessages", "Max messages", 50, Infinity));
-			settingsPage.appendChild(createNumberInput("emoteSize", "Emote resolution", 1, 4));
+			createNumberInput("settings.zoom", "Zoom", "", 0.5, 2.0, 0.1);
+			createNumberInput("settings.maxMessages", "Max messages", "The maximum amount of message in a timeline", 50, Infinity);
+			createNumberInput("settings.emoteSize", "Emote resolution", "The maximum vertical emote resolution", 1, 4);
 
 			settingsPage.appendChild(createElementWithText("h2", "Recent messages"));
-			settingsPage.appendChild(createNumberInput("recentMessagesLimit", "Recent messages limit", 0, 900));
+			createNumberInput("settings.recentMessagesLimit", "Recent messages limit", "The amount of messages to fecth from the recent messages service", 0, 900);
 
 			settingsPage.appendChild(createElementWithText("h2", "File uploader"));
-			settingsPage.appendChild(createTextbox("uploaderUrl", "Upload URL"));
-			settingsPage.appendChild(createTextbox("uploaderField", "File field"));
-			settingsPage.appendChild(createTextbox("uploaderLinkFormat", "Link format"));
-			settingsPage.appendChild(createTextbox("uploaderDeleteFormat", "Delete format"));
-			settingsPage.appendChild(createCheckbox("uploaderUploadProgress", "Monitor upload progress"));
+			createTextbox("settings.uploaderUrl", "Upload URL", "");
+			createTextbox("settings.uploaderField", "File field", "");
+			createTextbox("settings.uploaderLinkFormat", "Link format", "");
+			createTextbox("settings.uploaderDeleteFormat", "Delete format", "");
+			createCheckbox("settings.uploaderUploadProgress", "Monitor upload progress");
 		}
 	}
 }
@@ -1662,6 +1701,15 @@ function createElementWithText(type, text) {
 }
 
 class Settings {
+	constructor()
+	{
+		Object.defineProperty(this, "zoom", {
+			get: () => {return this._zoom},
+			set: (v) => {this._zoom = v; document.body.style.zoom = v},
+		})
+	}
+
+	_zoom = 1
 	emoteSize = 3
 
 	maxMessages = 1000
@@ -1686,7 +1734,8 @@ function loadSettings() {
 	if (!s) return;
 
 	var j = JSON.parse(s);
-	settings = { ...settings, ...j };
+	settings = Object.assign(settings, j);
+	settings.zoom = settings.zoom;
 }
 
 class Tabber {
