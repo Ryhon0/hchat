@@ -1,5 +1,3 @@
-// const ChannelID = 76055616;
-// const ChannelName = "CallMeCarsonLIVE".toLowerCase();
 const clientID = "atu01l1tzhhfpzobn87uwwllq5pt4e";
 
 var cachedUserColors = new Map()
