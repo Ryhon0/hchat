@@ -321,7 +321,25 @@ async function loaded() {
 	};
 
 	document.onkeydown = (e) => {
-		if (!document.activeElement || (document.activeElement.tagName.toLowerCase() != "input" && document.activeElement.tagName.toLowerCase() != "textarea")) {
+		if (e.code == "PageDown")
+		{
+			channelTabber.currentPage.scrollBy(0, 1);
+			return;
+		}
+		else if(e.code == "PageUp") {
+			channelTabber.currentPage.scrollBy(0, -1);
+			return;
+		}
+		else if (e.code == "Home")
+		{
+			channelTabber.currentPage.scrollTo(0, 0);
+			return;
+		}
+		else if(e.code == "End") {
+			channelTabber.currentPage.scrollTo(0, channelTabber.currentPage.scrollHeight);
+			return;
+		}
+		else if (!document.activeElement || (document.activeElement.tagName.toLowerCase() != "input" && document.activeElement.tagName.toLowerCase() != "textarea")) {
 			if (e.ctrlKey) return;
 
 			textInput.focus();
@@ -568,6 +586,7 @@ function processMessage(pm, beforeElem = undefined) {
 			switch (pm.tags["msg-id"]) {
 				case "subgift":
 				case "submysterygift":
+				case "giftpaidupgrade":
 				case "resub":
 				case "sub":
 					var subFrom = pm.tags["display-name"];
@@ -602,8 +621,7 @@ function processMessage(pm, beforeElem = undefined) {
 						micon.appendChild(li);
 					}
 					if (!pm.command.channel) {
-						if (!beforeElem) channel.timeline.appendChild(mi);
-						else channel.timeline.insertBefore(mi, beforeElem);
+						timelinePush(channel.timeline, mi, beforeElem);
 						return;
 					}
 					break;
@@ -614,9 +632,7 @@ function processMessage(pm, beforeElem = undefined) {
 					console.log(pm.tags["msg-id"]);
 					mi.appendChild(document.createTextNode(pm.content));
 
-					if (!beforeElem) channel.timeline.appendChild(mi);
-					else channel.timeline.insertBefore(mi, beforeElem);
-
+					timelinePush(channel.timeline, mi, beforeElem);
 					return;
 			}
 		}
@@ -727,9 +743,23 @@ function processMessage(pm, beforeElem = undefined) {
 		console.error(e);
 	}
 
-	if (!beforeElem) channel.timeline.appendChild(mi);
-	else channel.timeline.insertBefore(mi, beforeElem);
-	maintainMessageLimit(channel.timeline);
+	timelinePush(channel.timeline, mi, beforeElem);
+}
+
+/**
+ * @param { Element } tl 
+ * @param { Element } msg 
+ * @param { Element } before 
+ */
+function timelinePush(tl, msg, before = undefined) {
+	var toBottom = tl.scrollHeight - tl.scrollTop - tl.parentElement.clientHeight;
+	if (!before) tl.appendChild(msg);
+	else tl.insertBefore(msg, before);
+
+	if (Math.abs(toBottom) < 32)
+		msg.scrollIntoView();
+
+	maintainMessageLimit(tl);
 }
 
 /**
@@ -1259,10 +1289,12 @@ async function openChannelTab(name, id = undefined) {
 				for (var m of msg.messages) {
 					processMessage(parseMessage(m), stopper);
 				}
+				stopper.scrollIntoView();
 				stopper.remove();
 			}
 			else {
 				stopper.innerText = "Failed to load message history" + msg.erorr_code + " - " + msg.erorr;
+				stopper.scrollIntoView();
 			}
 		});
 	});
@@ -1475,7 +1507,8 @@ function uploadFile(f) {
 		uploadMessage.classList.add("upload");
 		const upText = document.createTextNode("Uploading " + f.name + "...");
 		uploadMessage.appendChild(upText);
-		selectedChannel.timeline.appendChild(uploadMessage);
+
+		timelinePush(selectedChannel.timeline, uploadMessage);
 
 		var uploader = new Uploader();
 		uploader.url = settings.uploaderUrl;
@@ -1503,7 +1536,7 @@ function uploadFile(f) {
 				if (r.error) {
 					var b = document.createElement("div");
 					b.innerText = "Failed to upload " + f.name + ", check dev tools...";
-					selectedChannel.timeline.appendChild(b);
+					timelinePush(selectedChannel.timeline, b);
 					console.log(r.error);
 				}
 				else {
@@ -1517,7 +1550,7 @@ function uploadFile(f) {
 						a.target = "_blank";
 
 						b.appendChild(a);
-						selectedChannel.timeline.appendChild(b);
+						timelinePush(selectedChannel.timeline, b);
 					}
 
 					pushInputText(r.link);
@@ -1532,7 +1565,7 @@ function uploadFile(f) {
 						a.target = "_blank";
 
 						b.appendChild(a);
-						selectedChannel.timeline.appendChild(b);
+						timelinePush(selectedChannel.timeline, b);
 					}
 				}
 			});
