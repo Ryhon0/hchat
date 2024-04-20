@@ -553,7 +553,7 @@ function processMessage(pm, beforeElem = undefined) {
 				m.innerText += " Message from " + rm.displayName() + " was deleted";
 				micon.appendChild(m);
 
-				timelinePush(mi, beforeElem);
+				timelinePush(channel.timeline, mi, beforeElem);
 				maintainMessageLimit(channel.timeline);
 
 				micon.onclick = (ev) => {
@@ -601,7 +601,7 @@ function processMessage(pm, beforeElem = undefined) {
 					}
 
 					if (!pm.command.channel) {
-						timelinePush(channel, mi);
+						timelinePush(channel.time, mi, beforeElem);
 						return;
 					}
 					break;
