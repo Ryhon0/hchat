@@ -601,7 +601,7 @@ function processMessage(pm, beforeElem = undefined) {
 					}
 
 					if (!pm.command.channel) {
-						timelinePush(channel.time, mi, beforeElem);
+						timelinePush(channel.timeline, mi, beforeElem);
 						return;
 					}
 					break;
