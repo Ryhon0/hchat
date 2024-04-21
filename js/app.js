@@ -391,7 +391,6 @@ async function loaded() {
 		dropZone.addEventListener('dragover', allowDrag);
 
 		dropZone.addEventListener('dragleave', function (e) {
-			console.log('dragleave');
 			hideDropZone();
 		});
 
@@ -435,6 +434,8 @@ async function loaded() {
 		};
 		hchat.badgePredictates.push(getHChatBadges);
 	}
+
+	hchat.Twitch.clientID = clientID;
 	await hchat.init();
 
 	anonClient = new ChatClient();
@@ -446,8 +447,6 @@ async function loaded() {
 	if (login) {
 		login = JSON.parse(login);
 
-		hchat.Twitch.clientID = clientID;
-		hchat.Twitch.token = login.token;
 
 		hchat.getGlobalCheermotes().then(() => { });
 	}
@@ -987,7 +986,7 @@ function createEmoteElement(c) {
 }
 
 function authRedirect() {
-	var scopes = encodeURIComponent(["chat:edit", "chat:read", "user:read:chat", "whispers:read", "whispers:edit", "channel:moderate", "user:read:subscriptions", "user:read:follows", "user:manage:whispers", "user:manage:chat_color", "user:manage:blocked_users", "user:read:blocked_users"].join(' '));
+	var scopes = encodeURIComponent(["user:read:email", "clips:edit", "chat:read", "chat:edit", "channel:moderate", "whispers:read", "whispers:edit", "moderation:read", "channel:read:hype_train", "user:read:blocked_users", "user:manage:blocked_users", "user:read:follows", "channel:manage:polls", "channel:manage:predictions", "channel:read:polls", "channel:read:predictions", "moderator:read:automod_settings", "moderator:manage:automod_settings", "moderator:manage:banned_users", "moderator:read:blocked_terms", "moderator:manage:blocked_terms", "moderator:read:chat_settings", "moderator:manage:chat_settings", "channel:manage:raids", "moderator:manage:announcements", "moderator:manage:chat_messages", "user:manage:chat_color", "channel:manage:moderators", "channel:read:vips", "channel:manage:vips", "user:manage:whispers", "moderator:read:shield_mode", "moderator:manage:shield_mode", "moderator:read:shoutouts", "moderator:manage:shoutouts", "channel:bot", "user:bot", "user:read:chat", "user:read:moderated_channels", "user:write:chat", "user:read:emotes", "moderator:read:unban_requests", "moderator:manage:unban_requests"].join(' '));
 	window.location.replace(`https://id.twitch.tv/oauth2/authorize?client_id=${clientID}&redirect_uri=${encodeURIComponent(window.location.href)}&response_type=token&scope=${scopes}`);
 }
 
@@ -1073,24 +1072,25 @@ class ChatClient {
 			for (var m of this.pending)
 				this.send(m);
 			this.pending = [];
+		}
 
-			this.ws.onmessage = (ev) => {
-				for (var l of ev.data.split('\n')) {
-					var pm = parseMessage(l);
-					if (pm && pm.command) {
-						if (pm.command.command == "PING") {
-							this.send("PONG :tmi.twitch.tv " + pm.content + "\n");
-						}
-						else if (pm.command.command == "RECONNECT") {
-							this.init(user, token);
-						}
-						else this.onMessage(pm);
+		this.ws.onmessage = (ev) => {
+			for (var l of ev.data.split('\r\n')) {
+				var pm = parseMessage(l);
+				if (pm && pm.command) {
+					if (pm.command.command == "PING") {
+						this.send("PONG :tmi.twitch.tv " + pm.content + "\n");
 					}
+					else if (pm.command.command == "RECONNECT") {
+						this.init(user, token);
+					}
+					else this.onMessage(pm);
 				}
 			}
-			this.ws.onerror = (ev) => {
-				this.init(user, token);
-			}
+		}
+
+		this.ws.onerror = (ev) => {
+			this.init(user, token);
 		}
 	}
 
@@ -1299,6 +1299,14 @@ async function openChannelTab(name, id = undefined) {
 			}
 		});
 	});
+
+	for(var acc of accounts)
+	{
+		if(acc.state == AccountStateReady)
+		{
+			getTwitchEmotesForChannel(acc, ch.id).then(() => {});
+		}
+	}
 }
 
 function closeChannelTab(ch) {
@@ -1402,6 +1410,8 @@ class Account {
 	state = AccountStateChecking
 	/** @type { ChatClient } */
 	irc
+	/** @type { Object.<Number, Map<String, EmoteInfo> } */
+	emotesForChannel = {}
 }
 /** @type { Account } */
 var activeAccount;
@@ -1468,17 +1478,68 @@ function saveAccounts() {
 function onAccountReady(acc) {
 	acc.irc = new ChatClient(acc.name.toLowerCase(), acc.token);
 	acc.irc.onMessage = (msg) => {
+		if(msg.command == "GLOBALUSERSTATE" && msg.userId() == acc.id)
+		{
+			console.log(msg);
+
+			acc.emoteSets = msg.tags["emote-sets"].split(',');
+		}
 		processMessage(msg);
 	};
+
+	for(var ch of channels)
+	{
+		getTwitchEmotesForChannel(acc, ch.id).then(()=>{});
+	}
+}
+
+/**
+ * @param { Account } account 
+ * @param { Number } channel_id 
+ */
+async function getTwitchEmotesForChannel(account, channel_id)
+{
+	var t = new TwitchAPI();
+	t.clientID = clientID;
+	t.token = account.token;
+	t.userID = account.id;
+
+	account.emotesForChannel[channel_id] = new Map();
+	var r = await t.getOwnedEmotesWithFollowerEmotes(channel_id);
+	if(r)
+	{
+		for(var e of r)
+		{
+			var ei = new EmoteInfo();
+			ei.provider = "twitch";
+
+			ei.id = e.id;
+			ei.name = e.name;
+			
+			for(var s in e.scale)
+			{
+				var num = Number(s);
+				ei.urls[num] = "https://static-cdn.jtvnw.net/emoticons/v2/" + e.id + "/default/dark/" + s + ".0";
+			}
+
+			account.emotesForChannel[channel_id].set(ei.id, ei);
+		}
+	}
 }
 
 function onAccountChanged() {
 	if (activeAccount) {
 		if (activeAccount.state == AccountStateExpired) {
-			textInput.disabled = false;
+			hchat.Twitch.token = undefined;
+			hchat.Twitch.userID = 0;
+
+			textInput.disabled = true;
 			textInput.placeholder = "Login for @" + activeAccount.name + " has expired. Please log in again.";
 		}
 		else {
+			hchat.Twitch.token = activeAccount.token;
+			hchat.Twitch.userID = activeAccount.id;
+
 			textInput.disabled = false;
 			textInput.placeholder = "Send message as @" + activeAccount.name + "...";
 		}
@@ -1490,6 +1551,9 @@ function onAccountChanged() {
 		}
 	}
 	else {
+		hchat.Twitch.token = undefined;
+		hchat.Twitch.userID = 0;
+
 		textInput.disabled = true;
 		textInput.placeholder = "You need to log in to send messages.";
 		currentAccountAvatar.style.display = "none";
@@ -1903,12 +1967,23 @@ function openEmojiList() {
 	tlbox.classList.add("hidden");
 
 	if (selectedChannel) {
-		var btn = document.createElement("button");
-		btn.innerText = "Channel Emotes";
+		{
+			var btn = document.createElement("button");
+			btn.innerText = "Twitch Emotes";
+			
+			var page = document.createElement("div");
+			page.list = activeAccount.emotesForChannel[selectedChannel.id] ?? new Map();
+			emoteTabber.addPage(btn, page);
+		}
 
-		var page = document.createElement("div");
-		page.list = selectedChannel.hchannel.channelEmotes;
-		emoteTabber.addPage(btn, page);
+		{
+			var btn = document.createElement("button");
+			btn.innerText = "Channel Emotes";
+			
+			var page = document.createElement("div");
+			page.list = selectedChannel.hchannel.channelEmotes;
+			emoteTabber.addPage(btn, page);
+		}
 	}
 
 	{
@@ -1938,7 +2013,8 @@ function closeEmojiList() {
 	tlbox.classList.remove("hidden");
 	list.classList.add("hidden");
 
-	emoteTabber.removeAllPages();
+	emoteTabber.tabList.innerHTML = "";
+	emoteTabber.pageList.innerHTML = "";
 }
 
 function pushInputText(tx) {

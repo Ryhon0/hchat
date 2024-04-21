@@ -8,6 +8,7 @@ class TwitchAPI {
 	/** @type {string|null} */
 	token = null;
 	clientID = null;
+	userID = 0;
 
 	useIVR() {
 		if (this.preferIVR) return this.preferIVR;
@@ -32,7 +33,7 @@ class TwitchAPI {
 	}
 
 	async getUser(id) {
-		return await getJSON(this.BaseIVRURL + "/v2/twitch/user?id=" + id);
+		return await getJSONCached(this.BaseIVRURL + "/v2/twitch/user?id=" + id);
 	}
 
 	async getVIPSAndMods(channel_name) {
@@ -64,7 +65,7 @@ class TwitchAPI {
 
 	async getGlobalEmotes() {
 		//if (this.useIVR())
-			return await getJSONCached(this.BaseIVRURL + "/v2/badges/global");
+		return await getJSONCached(this.BaseIVRURL + "/v2/badges/global");
 		//else
 		//	return (await this.getJSONAuthenticated(this.BaseHelixURL + "/chat/emotes/global")).data;
 	}
@@ -78,7 +79,7 @@ class TwitchAPI {
 
 	async getGlobalBadges() {
 		//if (this.useIVR())
-			return await getJSONCached(this.BaseIVRURL + "/v2/twitch/badges/global");
+		return await getJSONCached(this.BaseIVRURL + "/v2/twitch/badges/global");
 		//else
 		//	return (await this.getJSONAuthenticated(this.BaseHelixURL + "/chat/badges/global")).data;
 
@@ -86,7 +87,7 @@ class TwitchAPI {
 
 	async getChannelBadges(channel_id) {
 		//if (this.useIVR())
-			return await getJSONCached(this.BaseIVRURL + "/v2/twitch/badges/channel?id=" + channel_id);
+		return await getJSONCached(this.BaseIVRURL + "/v2/twitch/badges/channel?id=" + channel_id);
 		//else
 		//	return (await this.getJSONAuthenticated(this.BaseHelixURL + "/chat/badges?broadcaster_id=" + channel_id)).data;
 	}
@@ -97,6 +98,14 @@ class TwitchAPI {
 
 	async getChannelCheermotes(channel_id) {
 		return (await this.getJSONAuthenticated(this.BaseHelixURL + "/bits/cheermotes?broadcaster_id=" + channel_id)).data;
+	}
+
+	async getOwnedEmotes() {
+		return (await this.getJSONAuthenticated(this.BaseHelixURL + "/chat/emotes/user?user_id=" + this.userID)).data;
+	}
+
+	async getOwnedEmotesWithFollowerEmotes(channel_id) {
+		return (await this.getJSONAuthenticated(this.BaseHelixURL + "/chat/emotes/user?user_id=" + this.userID + "&broadcaster_id=" + channel_id)).data;
 	}
 
 	async getJSONAuthenticated(url, opts = { timeout: 5000 }) {
