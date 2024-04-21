@@ -588,6 +588,9 @@ function processMessage(pm, beforeElem = undefined) {
 				case "giftpaidupgrade":
 				case "resub":
 				case "sub":
+				case "standardpayforward":
+				case "communitypayforward":
+				case "primepaidupgrade":
 					var subFrom = pm.tags["display-name"];
 					var subFromId = pm.tags["user-id"];
 
