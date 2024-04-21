@@ -501,21 +501,50 @@ function processMessage(pm, beforeElem = undefined) {
 		document.body.appendChild(menu);
 
 		{
-			var copyid = createElementWithText("button", "Copy message ID");
-			copyid.onclick = () => {
-				navigator.clipboard.writeText(pm.tags.id);
-				menu.remove();
-			};
-			menu.appendChild(copyid);
-		}
-
-		{
 			var reply = createElementWithText("button", "Reply to message");
 			reply.onclick = () => {
 				setReply(pm.tags.id);
 				menu.remove();
 			};
 			menu.appendChild(reply);
+		}
+
+		{
+			var reply = createElementWithText("button", "Copy message content");
+			reply.onclick = () => {
+				navigator.clipboard.writeText(pm.tcontent ?? pm.content);
+				menu.remove();
+			};
+			menu.appendChild(reply);
+		}
+
+		if(settings.developer)
+		{
+			menu.appendChild(document.createElement("hr"));
+			{
+				var copyid = createElementWithText("button", "Copy message object");
+				copyid.onclick = () => {
+					navigator.clipboard.writeText(JSON.stringify(pm));
+					menu.remove();
+				};
+				menu.appendChild(copyid);
+			}
+			{
+				var copyid = createElementWithText("button", "Copy message ID");
+				copyid.onclick = () => {
+					navigator.clipboard.writeText(pm.tags.id);
+					menu.remove();
+				};
+				menu.appendChild(copyid);
+			}
+			{
+				var copyid = createElementWithText("button", "Copy user ID");
+				copyid.onclick = () => {
+					navigator.clipboard.writeText(pm.userId() + "");
+					menu.remove();
+				};
+				menu.appendChild(copyid);
+			}
 		}
 
 		setInterval(() => {
@@ -1803,8 +1832,9 @@ function openSettings() {
 			createCheckbox("settings.hideAppInstallButton", "Hide app install button");
 			createCheckbox("settings.hideHchatUserBadge", "Hide HChat user badges");
 			createCheckbox("settings.hideHchatNonce", "Hide my HChat user badge");
-			createNumberInput("settings.maxMessages", "Max messages", "The maximum amount of message in a timeline", 50, Infinity);
-			createNumberInput("settings.emoteSize", "Emote resolution", "The maximum vertical emote resolution", 1, 4);
+			createNumberInput("settings.maxMessages", "Max messages", "The maximum amount of message in a timeline. Lower values may improve performacne", 50, 2000);
+			createNumberInput("settings.emoteSize", "Emote resolution", "The maximum vertical emote resolution multiplier", 1, 4);
+			createCheckbox("settings.developer", "Developer mode");
 
 			settingsPage.appendChild(createElementWithText("h2", "Recent messages"));
 			createNumberInput("settings.recentMessagesLimit", "Recent messages limit", "The amount of messages to fecth from the recent messages service", 0, 900);
@@ -1859,6 +1889,8 @@ class Settings {
 	_hideAppInstallButton = false
 	_hideHchatUserBadge = false
 	hideHchatNonce = false
+
+	developer = false
 
 	emoteSize = 3
 

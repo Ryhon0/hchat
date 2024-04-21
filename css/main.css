@@ -325,11 +325,29 @@ button {
 {
 	pointer-events: all;
 	padding: 0px;
+	border-radius: 0px;
+	box-shadow: black 0px 0px 5px;
 }
 
 .contextMenu button
 {
 	border-radius: 0px;
+}
+
+.contextMenu button:hover
+{
+	background-color: #333;
+	border-radius: 0px;
+}
+
+.contextMenu hr
+{
+	height: 1px;
+	padding: 0px;
+	margin: 0px;
+	width: 100%;
+	border: none;
+	background-color: #1c1c1c;
 }
 
 .emoteTooltip {
