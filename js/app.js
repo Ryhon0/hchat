@@ -615,7 +615,7 @@ function processMessage(pm, beforeElem = undefined) {
 					mi.classList.add("raid");
 					{
 						var text = pm.tags["system-msg"];
-						var li = document.createElement("li");
+						var li = document.createElement("div");
 						li.classList.add("raid");
 						li.innerText = text.replace("\n", "");
 
