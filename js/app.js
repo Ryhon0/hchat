@@ -174,6 +174,16 @@ async function loaded() {
 			textInput.parentElement.classList.add("hidden");
 	};
 
+	setInterval(() => {
+		if(selectedChannel)
+		{
+			if(selectedChannel.autoscroll)
+			{
+				selectedChannel.timeline.scrollTop = selectedChannel.timeline.scrollHeight;
+			}
+		}
+	}, 10);
+
 	document.getElementById("addChannelButton").onclick = async () => {
 		var name = prompt('Channel name:');
 		if (name) {
@@ -419,7 +429,7 @@ async function loaded() {
 		setReply();
 	});
 
-	// HChat buttons
+	// HChat badges
 	{
 		var hchatBadge = new Badge();
 		hchatBadge.id = "hchat";
@@ -754,13 +764,9 @@ function processMessage(pm, beforeElem = undefined) {
  * @param { Element } before 
  */
 function timelinePush(tl, msg, before = undefined) {
-	var toBottom = tl.scrollHeight - tl.scrollTop - tl.parentElement.clientHeight;
 	if (!before) tl.appendChild(msg);
 	else tl.insertBefore(msg, before);
-
-	if (Math.abs(toBottom) < 32)
-		msg.scrollIntoView();
-
+	
 	maintainMessageLimit(tl);
 }
 
@@ -1230,6 +1236,8 @@ class Channel {
 	timeline;
 	/** @type { HChatChannel } */
 	hchannel;
+	/** @type { Boolean } */
+	autoscroll = true;
 
 	close() {
 		anonClient.part(this.name.toLowerCase());
@@ -1292,12 +1300,12 @@ async function openChannelTab(name, id = undefined) {
 				for (var m of msg.messages) {
 					processMessage(parseMessage(m), stopper);
 				}
-				stopper.scrollIntoView();
+				// stopper.scrollIntoView();
 				stopper.remove();
 			}
 			else {
 				stopper.innerText = "Failed to load message history" + msg.erorr_code + " - " + msg.erorr;
-				stopper.scrollIntoView();
+				// stopper.scrollIntoView();
 			}
 		});
 	});
@@ -1354,9 +1362,31 @@ async function openChannelChat(name, id = undefined) {
 	}
 	ch.name = name;
 	ch.id = id;
+	ch.hchannel = new HChatChannel(hchat, ch.id);
+
 	ch.timeline = document.createElement("div");
 	ch.timeline.classList.add("timeline");
-	ch.hchannel = new HChatChannel(hchat, ch.id);
+
+	var oldscroll = ch.timeline.scrollTop;
+	ch.timeline.addEventListener("scroll", (e) =>
+	{
+		var newscroll = e.target.scrollTop;
+		var channel = e.target.channel;
+		if(newscroll < oldscroll)
+		{
+			channel.autoscroll = false;
+		}
+		else if (newscroll > oldscroll)
+		{
+			var tl = channel.timeline;
+			var toBottom = tl.scrollHeight - tl.scrollTop - tl.clientHeight;
+			if (Math.abs(toBottom) < 16)
+				channel.autoscroll = true;
+		}
+
+		oldscroll = newscroll;
+	});
+
 	return ch;
 }
 
