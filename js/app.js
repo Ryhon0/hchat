@@ -321,22 +321,24 @@ async function loaded() {
 	};
 
 	document.onkeydown = (e) => {
-		if (e.code == "PageDown")
-		{
-			channelTabber.currentPage.scrollBy(0, 1);
+		if (e.code == "PageDown") {
+			channelTabber.currentPage.scrollBy(0, channelTabber.pageList.clientHeight);
+			e.preventDefault();
 			return;
 		}
-		else if(e.code == "PageUp") {
-			channelTabber.currentPage.scrollBy(0, -1);
+		else if (e.code == "PageUp") {
+			channelTabber.currentPage.scrollBy(0, -channelTabber.pageList.clientHeight);
+			e.preventDefault();
 			return;
 		}
-		else if (e.code == "Home")
-		{
+		else if (e.code == "Home") {
 			channelTabber.currentPage.scrollTo(0, 0);
+			e.preventDefault();
 			return;
 		}
-		else if(e.code == "End") {
+		else if (e.code == "End") {
 			channelTabber.currentPage.scrollTo(0, channelTabber.currentPage.scrollHeight);
+			e.preventDefault();
 			return;
 		}
 		else if (!document.activeElement || (document.activeElement.tagName.toLowerCase() != "input" && document.activeElement.tagName.toLowerCase() != "textarea")) {
@@ -1300,11 +1302,9 @@ async function openChannelTab(name, id = undefined) {
 		});
 	});
 
-	for(var acc of accounts)
-	{
-		if(acc.state == AccountStateReady)
-		{
-			getTwitchEmotesForChannel(acc, ch.id).then(() => {});
+	for (var acc of accounts) {
+		if (acc.state == AccountStateReady) {
+			getTwitchEmotesForChannel(acc, ch.id).then(() => { });
 		}
 	}
 }
@@ -1478,18 +1478,14 @@ function saveAccounts() {
 function onAccountReady(acc) {
 	acc.irc = new ChatClient(acc.name.toLowerCase(), acc.token);
 	acc.irc.onMessage = (msg) => {
-		if(msg.command == "GLOBALUSERSTATE" && msg.userId() == acc.id)
-		{
-			console.log(msg);
-
-			acc.emoteSets = msg.tags["emote-sets"].split(',');
+		if (msg.command == "GLOBALUSERSTATE" && msg.userId() == acc.id) {
+			// VIP and mod stuff
 		}
 		processMessage(msg);
 	};
 
-	for(var ch of channels)
-	{
-		getTwitchEmotesForChannel(acc, ch.id).then(()=>{});
+	for (var ch of channels) {
+		getTwitchEmotesForChannel(acc, ch.id).then(() => { });
 	}
 }
 
@@ -1497,8 +1493,7 @@ function onAccountReady(acc) {
  * @param { Account } account 
  * @param { Number } channel_id 
  */
-async function getTwitchEmotesForChannel(account, channel_id)
-{
+async function getTwitchEmotesForChannel(account, channel_id) {
 	var t = new TwitchAPI();
 	t.clientID = clientID;
 	t.token = account.token;
@@ -1506,18 +1501,15 @@ async function getTwitchEmotesForChannel(account, channel_id)
 
 	account.emotesForChannel[channel_id] = new Map();
 	var r = await t.getOwnedEmotesWithFollowerEmotes(channel_id);
-	if(r)
-	{
-		for(var e of r)
-		{
+	if (r) {
+		for (var e of r) {
 			var ei = new EmoteInfo();
 			ei.provider = "twitch";
 
 			ei.id = e.id;
 			ei.name = e.name;
-			
-			for(var s in e.scale)
-			{
+
+			for (var s in e.scale) {
 				var num = Number(s);
 				ei.urls[num] = "https://static-cdn.jtvnw.net/emoticons/v2/" + e.id + "/default/dark/" + s + ".0";
 			}
@@ -1915,8 +1907,7 @@ class Tabber {
 
 		if (page == this.currentPage) {
 			this.currentPage = null;
-			if(this.tabList.children[0])
-			{
+			if (this.tabList.children[0]) {
 				this.switchPage(this.tabList.children[0].page);
 			}
 			else this.switchPage(this.pageList.children[0]);
@@ -1970,7 +1961,7 @@ function openEmojiList() {
 		{
 			var btn = document.createElement("button");
 			btn.innerText = "Twitch Emotes";
-			
+
 			var page = document.createElement("div");
 			page.list = activeAccount.emotesForChannel[selectedChannel.id] ?? new Map();
 			emoteTabber.addPage(btn, page);
@@ -1979,7 +1970,7 @@ function openEmojiList() {
 		{
 			var btn = document.createElement("button");
 			btn.innerText = "Channel Emotes";
-			
+
 			var page = document.createElement("div");
 			page.list = selectedChannel.hchannel.channelEmotes;
 			emoteTabber.addPage(btn, page);
