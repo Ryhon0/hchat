@@ -524,7 +524,8 @@ function processMessage(pm, beforeElem = undefined) {
 			});
 		}, 0);
 
-		showTooltip([ev.clientX, ev.clientY], menu, true);
+		var zoom = document.body.style.zoom;
+		showTooltip([ev.clientX / zoom, ev.clientY / zoom], menu, true);
 		ev.preventDefault();
 	}
 
@@ -1011,7 +1012,7 @@ function showTooltip(parent, what, clickable = false) {
 
 	what.classList.add("tooltip");
 	if (clickable)
-		what.classList.add("clickableTooltip");
+		what.classList.add("contextMenu");
 
 	var tipBbox = what.getBoundingClientRect();
 
