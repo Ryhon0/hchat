@@ -1848,7 +1848,11 @@ class Tabber {
 
 		if (page == this.currentPage) {
 			this.currentPage = null;
-			this.switchPage(this.tabList.children[0].page);
+			if(this.tabList.children[0])
+			{
+				this.switchPage(this.tabList.children[0].page);
+			}
+			else this.switchPage(this.pageList.children[0]);
 		}
 	}
 
