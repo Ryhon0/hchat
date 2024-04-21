@@ -105,7 +105,24 @@ class TwitchAPI {
 	}
 
 	async getOwnedEmotesWithFollowerEmotes(channel_id) {
-		return (await this.getJSONAuthenticated(this.BaseHelixURL + "/chat/emotes/user?user_id=" + this.userID + "&broadcaster_id=" + channel_id)).data;
+		var emotes = [];
+		var cursor = undefined;
+		do
+		{
+			var url = this.BaseHelixURL + "/chat/emotes/user?user_id=" + this.userID + "&broadcaster_id=" + channel_id;
+			if(cursor)
+				url += "&after=" + cursor;
+
+			var r = await this.getJSONAuthenticated(url);
+			if(r.pagination)
+				cursor = r.pagination.cursor;
+			
+			if(r.data)
+				emotes = [...emotes, ...r.data];
+		}
+		while(cursor);
+
+		return emotes;
 	}
 
 	async getJSONAuthenticated(url, opts = { timeout: 5000 }) {
