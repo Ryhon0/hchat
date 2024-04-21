@@ -16,6 +16,8 @@ body {
 
 	font-family: FreeSans, Sans;
 	font-size: 20px;
+	
+	overflow: hidden;
 }
 
 * {
@@ -387,8 +389,11 @@ input:placeholder-shown {
 }
 
 #emojiList .emote {
-	margin: 0.25em;
+	margin: 0.1em;
+	padding: 0.2em;
 	cursor: pointer;
+	background-color: #1c1c1c;
+	border-radius: 0.5em;
 }
 
 #emoteTabs>* {
