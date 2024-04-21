@@ -624,7 +624,7 @@ class HChatChannel {
 	 * @param { Message } msg 
 	 * @returns { String[] | Emote[] | Link[] | Mention[] | CheerMote[] }
 	 */
-	parseMessageComponents(input, msg,) {
+	parseMessageComponents(input, msg, skipEmojis = false) {
 		var twitchEmotes = new Map();
 
 		if (msg.tags && msg.tags.emotes) {
@@ -652,7 +652,6 @@ class HChatChannel {
 					1: "https://static-cdn.jtvnw.net/emoticons/v2/" + id + "/default/dark/1.0",
 					2: "https://static-cdn.jtvnw.net/emoticons/v2/" + id + "/default/dark/2.0",
 					3: "https://static-cdn.jtvnw.net/emoticons/v2/" + id + "/default/dark/3.0",
-					4: "https://static-cdn.jtvnw.net/emoticons/v2/" + id + "/default/dark/4.0",
 				}
 				e.provider = "twitch";
 				twitchEmotes.set(name, e);
@@ -689,13 +688,15 @@ class HChatChannel {
 				}
 			}
 
-			var es = this.parseEmojis(s);
-			if (es.length > 1) {
-				for (var i in es) {
-					var e = es[i];
-					comps = comps.concat(this.parseMessageComponents(e, msg));
+			if (!skipEmojis) {
+				var es = this.parseEmojis(s);
+				if (es.length > 1) {
+					for (var i in es) {
+						var e = es[i];
+						comps = comps.concat(this.parseMessageComponents(e, msg, true));
+					}
+					continue;
 				}
-				continue;
 			}
 
 			if (msg.tags.bits) {
