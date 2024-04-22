@@ -1319,8 +1319,6 @@ class Channel {
 
 		for (var m of e) {
 			if (m.isIntersecting) {
-				console.log(m.target);
-
 				if (m.target == tl.lastChild) {
 					channel.unread = false;
 					dirty = true;
