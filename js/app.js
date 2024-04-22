@@ -175,10 +175,8 @@ async function loaded() {
 	};
 
 	setInterval(() => {
-		if(selectedChannel)
-		{
-			if(selectedChannel.autoscroll)
-			{
+		if (selectedChannel) {
+			if (selectedChannel.autoscroll) {
 				selectedChannel.timeline.scrollTop = selectedChannel.timeline.scrollHeight;
 			}
 		}
@@ -518,8 +516,7 @@ function processMessage(pm, beforeElem = undefined) {
 			menu.appendChild(reply);
 		}
 
-		if(settings.developer)
-		{
+		if (settings.developer) {
 			menu.appendChild(document.createElement("hr"));
 			{
 				var copyid = createElementWithText("button", "Copy message object");
@@ -685,6 +682,7 @@ function processMessage(pm, beforeElem = undefined) {
 		messagesById[pm.messageId()] = pm;
 
 		var mentioned = false;
+		var historical = "historical" in pm.tags;
 
 		// Reply
 		const replyId = pm.tags["reply-parent-msg-id"];
@@ -776,7 +774,17 @@ function processMessage(pm, beforeElem = undefined) {
 			// Mention
 			{
 				if (mentioned)
+				{
 					mi.classList.add("mentioned");
+
+					if(!historical)
+					{
+						channel.mentioningMessages.push(mi);
+						channel.observer.observe(mi);
+
+						playMentionSound();
+					}
+				}
 			}
 		}
 	}
@@ -794,9 +802,20 @@ function processMessage(pm, beforeElem = undefined) {
  * @param { Element } before 
  */
 function timelinePush(tl, msg, before = undefined) {
-	if (!before) tl.appendChild(msg);
-	else tl.insertBefore(msg, before);
-	
+	if (!before) {
+		tl.appendChild(msg);
+
+		/** @type { Channel } */
+		var ch = tl.channel;
+		ch.unread = true;
+		ch.observer.observe(msg);
+
+		ch.updateTab();
+	}
+	else {
+		tl.insertBefore(msg, before);
+	}
+
 	maintainMessageLimit(tl);
 }
 
@@ -816,6 +835,15 @@ function maintainMessageLimit(tl) {
 			m.remove();
 		}
 	}
+}
+
+function playMentionSound()
+{
+	var a = document.createElement("audio");
+	a.src = "/assets/sounds/notification/waterdrop.ogg";
+	a.autoplay = true;
+	a.style.display = "none";
+	document.body.appendChild(a);
 }
 
 /**
@@ -1247,7 +1275,10 @@ function testMessages() {
 	];
 
 	for (var i in samples) {
-		processMessage(parseMessage(samples[i]));
+		var msg = parseMessage(samples[i]);
+		msg.tags["room-id"] = selectedChannel.id + "";
+		
+		processMessage(msg);
 	}
 }
 
@@ -1266,11 +1297,67 @@ class Channel {
 	timeline;
 	/** @type { HChatChannel } */
 	hchannel;
+
 	/** @type { Boolean } */
 	autoscroll = true;
+	/** @type { Boolean } */
+	unread = false;
+	/** @type { Element[] } */
+	mentioningMessages = [];
+
+	/** @type { IntersectionObserver } */
+	observer = null;
+	/**
+	 * @param { IntersectionObserverEntry[] } e 
+	 * @param { IntersectionObserver } observer
+	 */
+	onIntersect(e, observer) {
+		var dirty = false;
+
+		var tl = observer.root;
+		var channel = tl.channel;
+
+		for (var m of e) {
+			if (m.isIntersecting) {
+
+				if (m.target == tl.lastChild) {
+					this.unread = false;
+					dirty = true;
+				}
+
+				var midx = channel.mentioningMessages.indexOf(m.target);
+				if(midx != -1)
+				{
+					channel.mentioningMessages.splice(midx, 1);
+					dirty = true;
+				}
+
+				observer.unobserve(m.target);
+			}
+		}
+
+		if(dirty)
+		{
+			channel.updateTab();
+			
+		}
+	}
 
 	close() {
 		anonClient.part(this.name.toLowerCase());
+	}
+
+	updateTab()
+	{
+		var tab = this.timeline.tab;
+			
+		if(this.unread)
+			tab.classList.add("unread");
+		else tab.classList.remove("unread");
+
+		if(this.mentioningMessages.length)
+			tab.classList.add("mentioned");
+		else tab.classList.remove("mentioned");
 	}
 }
 
@@ -1302,6 +1389,7 @@ async function openChannelTab(name, id = undefined) {
 	const page = ch.timeline;
 	page.channel = ch;
 	const tab = document.createElement("button");
+	tab.classList.add("channel");
 
 	{
 		tab.innerText = ch.name;
@@ -1397,17 +1485,16 @@ async function openChannelChat(name, id = undefined) {
 	ch.timeline = document.createElement("div");
 	ch.timeline.classList.add("timeline");
 
+	ch.observer = new IntersectionObserver(ch.onIntersect, { root: ch.timeline });
+
 	var oldscroll = ch.timeline.scrollTop;
-	ch.timeline.addEventListener("scroll", (e) =>
-	{
+	ch.timeline.addEventListener("scroll", (e) => {
 		var newscroll = e.target.scrollTop;
 		var channel = e.target.channel;
-		if(newscroll < oldscroll)
-		{
+		if (newscroll < oldscroll) {
 			channel.autoscroll = false;
 		}
-		else if (newscroll > oldscroll)
-		{
+		else if (newscroll > oldscroll) {
 			var tl = channel.timeline;
 			var toBottom = tl.scrollHeight - tl.scrollTop - tl.clientHeight;
 			if (Math.abs(toBottom) < 16)
@@ -1919,6 +2006,7 @@ function loadSettings() {
 	settings = Object.assign(settings, j);
 	settings.zoom = settings.zoom;
 	settings.hideHchatUserBadge = settings.hideHchatUserBadge;
+	settings.hideAppInstallButton = settings.hideAppInstallButton;
 }
 
 class Tabber {

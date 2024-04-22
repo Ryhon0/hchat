@@ -114,6 +114,25 @@ body {
 	height: 2em;
 }
 
+#channelList .channel {
+	color: rgb(156, 156, 156);
+	position: relative;
+}
+
+#channelList .channel.unread {
+	color: white;
+}
+
+#channelList .channel.mentioned::before {
+	width: 0.5em;
+	height: 0.5em;
+	position: absolute;
+	right: 0.1em;
+	top: 0.1em;
+	background-color: orange;
+	border-radius: 1em;
+	content: ' ';
+}
 
 .inputBar {
 	display: flex;
