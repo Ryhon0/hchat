@@ -823,6 +823,7 @@ function timelinePush(tl, msg, before = undefined) {
  * @param { Element } tl 
  */
 function maintainMessageLimit(tl) {
+	var channel = tl.channel;
 	var children = Array.from(tl.children);
 	if (children.length > settings.maxMessages) {
 		var delta = children.length - settings.maxMessages;
@@ -830,6 +831,8 @@ function maintainMessageLimit(tl) {
 		var toDelete = children.slice(0, delta);
 
 		for (var m of toDelete) {
+			channel.oldScroll -= m.clientHeight;
+
 			var mo = m.message;
 			if (mo) delete messagesById[mo.messageId()];
 			m.remove();
@@ -1341,6 +1344,7 @@ class Channel {
 			
 		}
 	}
+	oldScroll = 0;
 
 	close() {
 		anonClient.part(this.name.toLowerCase());
@@ -1486,21 +1490,21 @@ async function openChannelChat(name, id = undefined) {
 
 	ch.observer = new IntersectionObserver(ch.onIntersect, { root: ch.timeline });
 
-	var oldscroll = ch.timeline.scrollTop;
+	ch.oldScroll = ch.timeline.scrollTop;
 	ch.timeline.addEventListener("scroll", (e) => {
 		var newscroll = e.target.scrollTop;
 		var channel = e.target.channel;
-		if (newscroll < oldscroll) {
+		if (newscroll < channel.oldScroll) {
 			channel.autoscroll = false;
 		}
-		else if (newscroll > oldscroll) {
+		else if (newscroll >= channel.oldScroll) {
 			var tl = channel.timeline;
 			var toBottom = tl.scrollHeight - tl.scrollTop - tl.clientHeight;
 			if (Math.abs(toBottom) < 16)
 				channel.autoscroll = true;
 		}
 
-		oldscroll = newscroll;
+		channel.oldScroll = newscroll;
 	});
 
 	return ch;
