@@ -125,6 +125,61 @@ class TwitchAPI {
 		return emotes;
 	}
 
+	async getBlocklist()
+	{
+		var blocked = [];
+		var cursor = undefined;
+		do
+		{
+			var url = this.BaseHelixURL + "/users/blocks?broadcaster_id=" + this.userID + "&first=100";
+			if(cursor)
+				url += "&after=" + cursor;
+
+			var r = await this.getJSONAuthenticated(url);
+			if(r.pagination)
+				cursor = r.pagination.cursor;
+			
+			if(r.data)
+				blocked = [...blocked, ...r.data];
+		}
+		while(cursor);
+
+		return blocked;
+	}
+
+	async blockUser(user_id)
+	{
+		await this.fetchAuthenticated(this.BaseHelixURL + "/users/blocks?target_user_id=" + user_id, {"method": "PUT"});
+	}
+
+	async unblockUser(user_id)
+	{
+		await this.fetchAuthenticated(this.BaseHelixURL + "/users/blocks?target_user_id=" + user_id, {"method": "DELETE"});
+	}
+
+	async putJSONAuthenticated(url, opts = { timeout: 5000 }) {
+		return await this.getJSONAuthenticated(url, { ...opts, ...{"method": "PUT"} });
+	}
+
+	async postJSONAuthenticated(url, opts = { timeout: 5000 }) {
+		return await this.getJSONAuthenticated(url, { ...opts, ...{"method": "POST"} });
+	}
+
+	async deleteJSONAuthenticated(url, opts = { timeout: 5000 }) {
+		return await this.getJSONAuthenticated(url, { ...opts, ...{"method": "DELETE"} });
+	}
+
+	async fetchAuthenticated(url, opts)
+	{
+		await fetch(url, {...opts, ... {
+				headers: {
+					"Authorization": "Bearer " + this.token,
+					"Client-Id": this.clientID
+				}
+			}
+		});
+	}
+
 	async getJSONAuthenticated(url, opts = { timeout: 5000 }) {
 		opts.headers =
 		{

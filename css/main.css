@@ -202,6 +202,10 @@ button {
 	animation-play-state: running;
 }
 
+.timeline .blocked {
+	display: none;
+}
+
 .message {
 	display: flex;
 	flex-direction: row;

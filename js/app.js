@@ -476,6 +476,11 @@ var messagesById = {};
 function processMessage(pm, beforeElem = undefined) {
 	if (!pm || !pm.command) return;
 
+	var uid = pm.userId();
+	if (isUserBlocked(uid)) {
+		return;
+	}
+
 	var channel = getChannelById(pm.roomId());
 	if (isNaN(pm.roomId())) {
 		channel = selectedChannel;
@@ -514,6 +519,27 @@ function processMessage(pm, beforeElem = undefined) {
 				menu.remove();
 			};
 			menu.appendChild(reply);
+		}
+
+		{
+			menu.appendChild(document.createElement("hr"));
+
+			{
+				var profile = createElementWithText("button", "Open profile");
+				profile.onclick = () => {
+					window.open("https://twitch.tv/" + pm.username(), '_blank').focus();
+					menu.remove();
+				};
+				menu.appendChild(profile);
+			}
+			{
+				var block = createElementWithText("button", "Block " + pm.displayName());
+				block.onclick = () => {
+					blockUser(pm.userId()).then(() => { });
+					menu.remove();
+				};
+				menu.appendChild(block);
+			}
 		}
 
 		if (settings.developer) {
@@ -773,12 +799,10 @@ function processMessage(pm, beforeElem = undefined) {
 
 			// Mention
 			{
-				if (mentioned)
-				{
+				if (mentioned) {
 					mi.classList.add("mentioned");
 
-					if(!historical)
-					{
+					if (!historical) {
 						channel.mentioningMessages.push(mi);
 						channel.observer.observe(mi);
 
@@ -833,15 +857,18 @@ function maintainMessageLimit(tl) {
 		for (var m of toDelete) {
 			channel.oldScroll -= m.clientHeight;
 
-			var mo = m.message;
-			if (mo) delete messagesById[mo.messageId()];
-			m.remove();
+			removeMessage(m);
 		}
 	}
 }
 
-function playMentionSound()
-{
+function removeMessage(mi) {
+	var mo = mi.message;
+	if (mo) delete messagesById[mo.messageId()];
+	mi.remove();
+}
+
+function playMentionSound() {
 	var a = document.createElement("audio");
 	a.src = "/assets/sounds/notification/waterdrop.ogg";
 	a.autoplay = true;
@@ -1280,7 +1307,7 @@ function testMessages() {
 	for (var i in samples) {
 		var msg = parseMessage(samples[i]);
 		msg.tags["room-id"] = selectedChannel.id + "";
-		
+
 		processMessage(msg);
 	}
 }
@@ -1328,8 +1355,7 @@ class Channel {
 				}
 
 				var midx = channel.mentioningMessages.indexOf(m.target);
-				if(midx != -1)
-				{
+				if (midx != -1) {
 					channel.mentioningMessages.splice(midx, 1);
 					dirty = true;
 				}
@@ -1338,10 +1364,9 @@ class Channel {
 			}
 		}
 
-		if(dirty)
-		{
+		if (dirty) {
 			channel.updateTab();
-			
+
 		}
 	}
 	oldScroll = 0;
@@ -1350,15 +1375,14 @@ class Channel {
 		anonClient.part(this.name.toLowerCase());
 	}
 
-	updateTab()
-	{
+	updateTab() {
 		var tab = this.timeline.tab;
-			
-		if(this.unread)
+
+		if (this.unread)
 			tab.classList.add("unread");
 		else tab.classList.remove("unread");
 
-		if(this.mentioningMessages.length)
+		if (this.mentioningMessages.length)
 			tab.classList.add("mentioned");
 		else tab.classList.remove("mentioned");
 	}
@@ -1532,6 +1556,42 @@ function setReply(id) {
 	else replyingToBar.classList.add("hidden");
 }
 
+var blockedUsers = [];
+
+function isUserBlocked(user_id) {
+	return blockedUsers.indexOf(user_id) != -1;
+}
+
+async function blockUser(user_id) {
+	blockedUsers.push(user_id);
+	removeBlockedMessages();
+	return await hchat.Twitch.blockUser(user_id);
+}
+
+function removeBlockedMessages() {
+	for (var ch of channels)
+		for (var mi of ch.timeline.children) {
+			var msg = mi.message;
+			if (msg) {
+				if (isUserBlocked(msg.userId()))
+					mi.classList.add("blocked");
+				else
+					mi.classList.remove("blocked");
+			}
+		}
+}
+
+async function unblockUser(user_id) {
+	var idx = blockedUsers.indexOf(user_id);
+
+	if (idx != -1)
+		blockedUsers.splice(idx, 1);
+	
+	removeBlockedMessages();
+
+	return await hchat.Twitch.unblockUser(user_id);
+}
+
 // Space followed by U+E0000
 const spamBypassMagic = " \uDB40\uDC00";
 var lastMessage = "";
@@ -1539,7 +1599,7 @@ var lastMessage = "";
  * @param { String } msg 
  */
 function sendMessage(msg) {
-	if(msg == lastMessage)
+	if (msg == lastMessage)
 		msg += spamBypassMagic;
 
 	var ch = selectedChannel.name;
@@ -1573,6 +1633,15 @@ class Account {
 	irc
 	/** @type { Object.<Number, Map<String, EmoteInfo> } */
 	emotesForChannel = {}
+
+	createTwitch() {
+		var t = new TwitchAPI();
+		t.clientID = clientID;
+		t.token = this.token;
+		t.userID = this.id;
+
+		return t;
+	}
 }
 /** @type { Account } */
 var activeAccount;
@@ -1636,6 +1705,9 @@ function saveAccounts() {
 	localStorage.setItem("accounts", JSON.stringify(dat));
 }
 
+/**
+ * @param { Account } acc 
+ */
 function onAccountReady(acc) {
 	acc.irc = new ChatClient(acc.name.toLowerCase(), acc.token);
 	acc.irc.onMessage = (msg) => {
@@ -1644,6 +1716,14 @@ function onAccountReady(acc) {
 		}
 		processMessage(msg);
 	};
+
+	acc.createTwitch().getBlocklist().then(a => {
+		// TODO: Cache the usernames for unblocking?
+		if (a) {
+			blockedUsers = [...blockedUsers, ...a.map(o => Number(o.user_id))];
+			removeBlockedMessages();
+		}
+	});
 
 	for (var ch of channels) {
 		getTwitchEmotesForChannel(acc, ch.id).then(() => { });
@@ -1655,10 +1735,7 @@ function onAccountReady(acc) {
  * @param { Number } channel_id 
  */
 async function getTwitchEmotesForChannel(account, channel_id) {
-	var t = new TwitchAPI();
-	t.clientID = clientID;
-	t.token = account.token;
-	t.userID = account.id;
+	var t = account.createTwitch();
 
 	account.emotesForChannel[channel_id] = new Map();
 	var r = await t.getOwnedEmotesWithFollowerEmotes(channel_id);
