@@ -732,7 +732,6 @@ function processMessage(pm, beforeElem = undefined) {
 				case "announcement":
 					mi.classList.add("announcement");
 					pm.content = pm.content ?? pm.tags["system-msg"];
-					debugger;
 					break;
 				default:
 					console.log("Unhandled USERNOTICE, msg-id: " + pm.tags["msg-id"]);
