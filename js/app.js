@@ -1151,8 +1151,8 @@ class ChatClient {
 	onConnect = (e) => { };
 	onDisconnect = (e) => { };
 
-	pingTimeoutTime = 10000;
-	pingIntervalTime = 5000;
+	pingTimeoutTime = 5000;
+	pingIntervalTime = 2000;
 	pingTimeout;
 
 	connectionTimeoutTime = 10000;
@@ -1175,11 +1175,10 @@ class ChatClient {
 
 		this.username = user;
 
-		this.connectionTimeout = setTimeout( () =>
-			{
-				console.log("Could not open WebSocket in " + this.connectionTimeoutTime + "ms, trying again...");
-				this.ws.close();
-			}, this.connectionTimeoutTime);
+		this.connectionTimeout = setTimeout(() => {
+			console.log("Could not open WebSocket in " + this.connectionTimeoutTime + "ms, trying again...");
+			this.ws.close();
+		}, this.connectionTimeoutTime);
 		this.ws = new WebSocket("wss://irc-ws.chat.twitch.tv:443");
 		this.ws.onopen = (ev) => {
 			clearInterval(this.connectionTimeout);
@@ -1198,6 +1197,11 @@ class ChatClient {
 				this.send(m);
 			this.pending = [];
 
+			for(var ch of this.joinedChannels)
+			{
+				this.send("JOIN #" + ch);
+			}
+
 			this.onConnect(ev);
 
 			setTimeout(() => { this.sendPing(); }, this.pingIntervalTime);
@@ -1214,20 +1218,24 @@ class ChatClient {
 						setTimeout(() => { this.sendPing(); }, this.pingIntervalTime);
 					}
 					else if (pm.command.command == "RECONNECT") {
-						this.init(user, token);
+						this.ws.close();
 					}
 					else this.onMessage(pm);
 				}
 			}
 		}
 
+		this.ws.onerror = (ev) => {
+			console.log(ev);
+			this.ws.close();
+		};
+
 		this.ws.onclose = (ev) => {
 			this.onDisconnect(ev);
 			clearTimeout(this.connectionTimeout);
 			clearTimeout(this.pingTimeout);
 
-			setTimeout(() => 
-			{
+			setTimeout(() => {
 				this.init(user, token);
 			}, 5000);
 		}
@@ -1249,11 +1257,21 @@ class ChatClient {
 		else this.pending.push(msg);
 	}
 
+	joinedChannels = [];
 	join(channel) {
+		channel = channel.toLowerCase();
+
+		this.joinedChannels.push(channel);
 		this.send("JOIN #" + channel.toLowerCase());
 	}
 
 	part(channel) {
+		channel = channel.toLowerCase();
+
+		var idx = this.joinedChannels.indexOf(channel);
+		if (idx != -1)
+			this.joinedChannels.splice(idx, 1);
+
 		this.send("PART #" + channel.toLowerCase());
 	}
 
