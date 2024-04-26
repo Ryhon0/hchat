@@ -533,6 +533,7 @@ function processMessage(pm, beforeElem = undefined) {
 				};
 				menu.appendChild(profile);
 			}
+			if(!accounts.some(a => pm.userId() == a.id))
 			{
 				var block = createElementWithText("button", "Block " + pm.displayName());
 				block.onclick = () => {
