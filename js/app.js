@@ -465,13 +465,7 @@ async function loaded() {
 		textInput.classList.remove("connected");
 	};
 
-	var login = localStorage.getItem("login");
-	if (login) {
-		login = JSON.parse(login);
-
-
-		hchat.getGlobalCheermotes().then(() => { });
-	}
+	hchat.getGlobalCheermotes().then(() => { });
 
 	var savedChannels = getSavedChannels();
 	for (var i in savedChannels) {
@@ -996,7 +990,7 @@ function getFullMessageElement(channel, pm, mentionCb = undefined) {
 
 	var namecolor = pm.tags.color;
 	cachedUserColors.set(pm.user, namecolor);
-	cachedUserColors.set(pm.user, pm.displayName());
+	cachedUsernames.set(pm.user, pm.displayName());
 
 	var isAction = false;
 	if (pm.content.startsWith("ACTION") && pm.content[pm.content.length - 1] == "") {

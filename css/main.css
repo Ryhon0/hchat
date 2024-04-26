@@ -260,7 +260,6 @@ button {
 	width: calc(100% - 0.7em);
 
 	--bg-color: #333;
-	--bg-color-other: #222;
 	background-color: var(--bg-color);
 
 	display: flex;
@@ -273,6 +272,7 @@ button {
 .timeline>.announcement {
 	--bg-color: rgb(199, 195, 5);
 }
+
 .timeline>.mentioned {
 	--bg-color: rgb(168 93 6);
 }
