@@ -1532,13 +1532,24 @@ function setReply(id) {
 	else replyingToBar.classList.add("hidden");
 }
 
+// Space followed by U+E0000
+const spamBypassMagic = " \uDB40\uDC00";
+var lastMessage = "";
+/**
+ * @param { String } msg 
+ */
 function sendMessage(msg) {
+	if(msg == lastMessage)
+		msg += spamBypassMagic;
+
 	var ch = selectedChannel.name;
 
 	var tags = {};
 	if (!settings.hideHchatNonce) tags["client-nonce"] = "hchat,";
 	if (replyingToId) tags["reply-parent-msg-id"] = replyingToId;
 	activeAccount.irc.sendMessage(tags, ch, msg);
+
+	lastMessage = msg;
 }
 
 const AccountStateChecking = 0;
