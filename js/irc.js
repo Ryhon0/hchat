@@ -141,6 +141,7 @@ function parseCommand(rawCommandComponent) {
 			}
 			break;
 		case 'PING':
+		case 'PONG':
 			parsedCommand = {
 				command: commandParts[0]
 			}

@@ -454,6 +454,18 @@ async function loaded() {
 		processMessage(msg);
 	};
 
+	var status = document.getElementById("status");
+	anonClient.onConnect = (ev) => {
+		console.log(ev);
+		status.classList.add("connected");
+		status.classList.remove("disconnected");
+	};
+	anonClient.onDisconnect = (ev) => {
+		console.log(ev);
+		status.classList.add("disconnected");
+		status.classList.remove("connected");
+	};
+
 	var login = localStorage.getItem("login");
 	if (login) {
 		login = JSON.parse(login);
@@ -533,8 +545,7 @@ function processMessage(pm, beforeElem = undefined) {
 				};
 				menu.appendChild(profile);
 			}
-			if(!accounts.some(a => pm.userId() == a.id))
-			{
+			if (!accounts.some(a => pm.userId() == a.id)) {
 				var block = createElementWithText("button", "Block " + pm.displayName());
 				block.onclick = () => {
 					blockUser(pm.userId()).then(() => { });
@@ -1137,6 +1148,15 @@ class ChatClient {
 
 	/** @type { Function } */
 	onMessage = (msg) => { console.log(msg); };
+	onConnect = (e) => { };
+	onDisconnect = (e) => { };
+
+	pingTimeoutTime = 10000;
+	pingIntervalTime = 5000;
+	pingTimeout;
+
+	connectionTimeoutTime = 10000;
+	connectionTimeout;
 
 	/**
 	 * @param { String } user 
@@ -1155,8 +1175,15 @@ class ChatClient {
 
 		this.username = user;
 
+		this.connectionTimeout = setTimeout( () =>
+			{
+				console.log("Could not open WebSocket in " + this.connectionTimeoutTime + "ms, trying again...");
+				this.ws.close();
+			}, this.connectionTimeoutTime);
 		this.ws = new WebSocket("wss://irc-ws.chat.twitch.tv:443");
 		this.ws.onopen = (ev) => {
+			clearInterval(this.connectionTimeout);
+
 			this.send("CAP REQ :twitch.tv/membership twitch.tv/tags twitch.tv/commands\n");
 			if (user && token) {
 				this.send("PASS oauth:" + token);
@@ -1170,6 +1197,10 @@ class ChatClient {
 			for (var m of this.pending)
 				this.send(m);
 			this.pending = [];
+
+			this.onConnect(ev);
+
+			setTimeout(() => { this.sendPing(); }, this.pingIntervalTime);
 		}
 
 		this.ws.onmessage = (ev) => {
@@ -1179,6 +1210,9 @@ class ChatClient {
 					if (pm.command.command == "PING") {
 						this.send("PONG :tmi.twitch.tv " + pm.content + "\n");
 					}
+					if (pm.command.command == "PONG") {
+						setTimeout(() => { this.sendPing(); }, this.pingIntervalTime);
+					}
 					else if (pm.command.command == "RECONNECT") {
 						this.init(user, token);
 					}
@@ -1187,9 +1221,25 @@ class ChatClient {
 			}
 		}
 
-		this.ws.onerror = (ev) => {
-			this.init(user, token);
+		this.ws.onclose = (ev) => {
+			this.onDisconnect(ev);
+			clearTimeout(this.connectionTimeout);
+			clearTimeout(this.pingTimeout);
+
+			setTimeout(() => 
+			{
+				this.init(user, token);
+			}, 5000);
 		}
+	}
+
+	sendPing() {
+		clearTimeout(this.pingTimeout);
+		this.ws.send("PING");
+		this.pingTimeout = setTimeout(() => {
+			console.log("Server did not PONG in " + this.pingTimeoutTime + "ms, trying again...");
+			this.ws.close();
+		}, this.pingTimeoutTime);
 	}
 
 	pending = [];
@@ -1923,7 +1973,7 @@ function openSettings() {
 	var blockListSelect;
 	function createBlockList() {
 		blockListSelect.innerHTML = "";
-		
+
 		for (var u of blockedUsers) {
 			var o = document.createElement("option");
 			o.innerText = cachedUsernames.get(u) ?? u;
@@ -2040,7 +2090,7 @@ function openSettings() {
 			settingsContent.appendChild(createElementWithText("h3", "Blocked users"));
 			{
 				blockListSelect = document.createElement("select");
-				blockListSelect.size = 5;
+				blockListSelect.size = 6;
 				blockListSelect.classList.add("blocklist");
 				settingsContent.appendChild(blockListSelect);
 

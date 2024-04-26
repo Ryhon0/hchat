@@ -158,6 +158,23 @@ body {
 	padding: 0.25em;
 }
 
+#status
+{
+	background-color: rgb(156, 156, 156);
+	width: 0.25em;
+	height: 100%;
+}
+
+#status.connected
+{
+	background-color: lime;
+}
+
+#status.disconnected
+{
+	background-color: red;
+}
+
 button {
 	background-color: #383838;
 	border: none;
