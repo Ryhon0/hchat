@@ -640,6 +640,39 @@ function processMessage(pm, beforeElem = undefined) {
 			}
 			return;
 		}
+		else if (pm.command.command == "CLEARCHAT") {
+			var timedOutUser = pm.tags["target-user-id"];
+			if (timedOutUser) {
+				timedOutUser = Number(timedOutUser);
+				for (var m of channel.timeline.children) {
+					var msg = m.message;
+					if (msg) {
+						if (msg.userId() == timedOutUser)
+							m.classList.add("deleted");
+					}
+				}
+
+				var duration = Number(pm.tags["ban-duration"]);
+				var username = cachedUsernames.get(timedOutUser) ?? (timedOutUser + "");
+				{
+					var durationText = prettyTime(duration);
+					micon.appendChild(document.createTextNode(username + " has been timed out for " + durationText));
+				}
+				timelinePush(channel.timeline, mi, beforeElem);
+			}
+			else {
+				for (var m of channel.timeline.children) {
+					var msg = m.message;
+					if (msg) {
+						m.classList.add("deleted");
+					}
+				}
+
+				micon.appendChild(document.createTextNode("Chat has been cleared"));
+				timelinePush(channel.timeline, mi, beforeElem);
+			}
+			return;
+		}
 
 		if (["PRIVMSG", "USERNOTICE", "NOTICE"].indexOf(pm.command.command) == -1) return;
 
@@ -831,6 +864,40 @@ function processMessage(pm, beforeElem = undefined) {
 	timelinePush(channel.timeline, mi, beforeElem);
 }
 
+function prettyTime(seconds) {
+	var text = "";
+
+	var restSecs = seconds % 60;
+	var mins = Math.floor(seconds / 60) % 60;
+	var hours = Math.floor(seconds / (60 * 60)) % 24;
+	var days = Math.floor(seconds / (60 * 60 * 24));
+
+	if (days != 0) {
+		if (days == 1) text += "1 day";
+		else text += days + " days";
+	}
+
+	if (hours != 0) {
+		if (text) text += " ";
+		if (hours == 1) text += "1 hour";
+		else text += hours + " hours";
+	}
+
+	if (mins != 0) {
+		if (text) text += " ";
+		if (mins == 1) text += "1 minute";
+		else text += mins + " minutes";
+	}
+
+	if (restSecs != 0) {
+		if (text) text += " ";
+		if (restSecs == 1) text += "1 second";
+		else text += restSecs + " seconds";
+	}
+
+	return text;
+}
+
 /**
  * @param { Element } tl 
  * @param { Element } msg 
@@ -989,8 +1056,8 @@ function getFullMessageElement(channel, pm, mentionCb = undefined) {
 	var mi = document.createElement("span");
 
 	var namecolor = pm.tags.color;
-	cachedUserColors.set(pm.user, namecolor);
-	cachedUsernames.set(pm.user, pm.displayName());
+	cachedUserColors.set(pm.userId(), namecolor);
+	cachedUsernames.set(pm.userId(), pm.displayName());
 
 	var isAction = false;
 	if (pm.content.startsWith("ACTION") && pm.content[pm.content.length - 1] == "") {
@@ -1195,8 +1262,7 @@ class ChatClient {
 				this.send(m);
 			this.pending = [];
 
-			for(var ch of this.joinedChannels)
-			{
+			for (var ch of this.joinedChannels) {
 				this.send("JOIN #" + ch);
 			}
 
