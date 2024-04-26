@@ -270,6 +270,9 @@ button {
 	background-color: color-mix(in srgb, var(--bg-color), #000 10%)
 }
 
+.timeline>.announcement {
+	--bg-color: rgb(199, 195, 5);
+}
 .timeline>.mentioned {
 	--bg-color: rgb(168 93 6);
 }
