@@ -483,7 +483,7 @@ input:placeholder-shown {
 	width: 15em;
 }
 
-.settings{
+.settings > .content{
 	padding: 3em;
 	max-width: 30em;
 	margin: auto;
@@ -512,6 +512,22 @@ input:placeholder-shown {
 .settings input[type=number].forSlider
 {
 	width: 7em;
+}
+
+.settings .blocklist
+{
+	height: 8em;
+	overflow-y: scroll;
+	width: 100%;
+
+	background-color: #222222;
+	border: none;
+	border-radius: 0.25em;
+}
+
+.settings .blocklist option:checked
+{
+	background-color: #3a3ae5;
 }
 
 .hidehchatuserbadge .badge-hchat

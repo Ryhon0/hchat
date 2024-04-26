@@ -1,6 +1,7 @@
 const clientID = "atu01l1tzhhfpzobn87uwwllq5pt4e";
 
 var cachedUserColors = new Map()
+var cachedUsernames = new Map()
 
 var sendButton;
 var textInput;
@@ -476,11 +477,6 @@ var messagesById = {};
 function processMessage(pm, beforeElem = undefined) {
 	if (!pm || !pm.command) return;
 
-	var uid = pm.userId();
-	if (isUserBlocked(uid)) {
-		return;
-	}
-
 	var channel = getChannelById(pm.roomId());
 	if (isNaN(pm.roomId())) {
 		channel = selectedChannel;
@@ -497,6 +493,11 @@ function processMessage(pm, beforeElem = undefined) {
 	mi.classList.add("message");
 	mi.id = "message#" + pm.tags.id;
 	mi.message = pm;
+
+	var uid = pm.userId();
+	if (isUserBlocked(uid)) {
+		mi.classList.add("blocked");
+	}
 
 	mi.oncontextmenu = (ev) => {
 		var menu = document.createElement("div");
@@ -979,9 +980,9 @@ function getFullMessageElement(channel, pm, mentionCb = undefined) {
 
 	var namecolor = pm.tags.color;
 	cachedUserColors.set(pm.user, namecolor);
+	cachedUserColors.set(pm.user, pm.displayName());
 
 	var isAction = false;
-	// TODO: Don't modify the content
 	if (pm.content.startsWith("ACTION") && pm.content[pm.content.length - 1] == "") {
 		isAction = true;
 		if (namecolor) {
@@ -1586,7 +1587,7 @@ async function unblockUser(user_id) {
 
 	if (idx != -1)
 		blockedUsers.splice(idx, 1);
-	
+
 	removeBlockedMessages();
 
 	return await hchat.Twitch.unblockUser(user_id);
@@ -1718,9 +1719,12 @@ function onAccountReady(acc) {
 	};
 
 	acc.createTwitch().getBlocklist().then(a => {
-		// TODO: Cache the usernames for unblocking?
 		if (a) {
-			blockedUsers = [...blockedUsers, ...a.map(o => Number(o.user_id))];
+			blockedUsers = [...blockedUsers, ...a.map(o => {
+				var id = Number(o.user_id);
+				cachedUsernames.set(id, o.display_name);
+				return Number(id);
+			})];
 			removeBlockedMessages();
 		}
 	});
@@ -1835,6 +1839,7 @@ function uploadFile(f) {
 					console.log(r.error);
 				}
 				else {
+					var c = document.createElement("div");
 					{
 						var b = document.createElement("div");
 						b.innerText = "File uploaded to ";
@@ -1845,10 +1850,8 @@ function uploadFile(f) {
 						a.target = "_blank";
 
 						b.appendChild(a);
-						timelinePush(selectedChannel.timeline, b);
+						c.appendChild(b);
 					}
-
-					pushInputText(r.link);
 
 					if (r.delete) {
 						var b = document.createElement("div");
@@ -1860,8 +1863,11 @@ function uploadFile(f) {
 						a.target = "_blank";
 
 						b.appendChild(a);
-						timelinePush(selectedChannel.timeline, b);
+						c.appendChild(b);
 					}
+
+					timelinePush(selectedChannel.timeline, c);
+					pushInputText(r.link);
 				}
 			});
 	};
@@ -1913,8 +1919,23 @@ function openSettings() {
 		return obj[finalProp] = value;
 	}
 
+	var blockListSelect;
+	function createBlockList() {
+		blockListSelect.innerHTML = "";
+		
+		for (var u of blockedUsers) {
+			var o = document.createElement("option");
+			o.innerText = cachedUsernames.get(u) ?? u;
+			o.value = u;
+			blockListSelect.appendChild(o);
+		}
+	}
 	// Content
 	{
+		var settingsContent = document.createElement("div");
+		settingsContent.classList.add("content");
+		settingsPage.appendChild(settingsContent);
+
 		function createCheckbox(key, text) {
 			const d = document.createElement("div");
 
@@ -1931,12 +1952,12 @@ function openSettings() {
 			d.appendChild(cb);
 			d.appendChild(l);
 
-			settingsPage.appendChild(d);
+			settingsContent.appendChild(d);
 		}
 
 		function createNumberInput(key, title, description, min, max, step = 1) {
-			settingsPage.appendChild(createElementWithText("h3", title));
-			settingsPage.appendChild(createElementWithText("div", description));
+			settingsContent.appendChild(createElementWithText("h3", title));
+			settingsContent.appendChild(createElementWithText("div", description));
 
 			const si = document.createElement("input");
 			const ni = document.createElement("input");
@@ -1963,7 +1984,7 @@ function openSettings() {
 					ni.value = si.value;
 					saveSettings();
 				};
-				settingsPage.appendChild(si);
+				settingsContent.appendChild(si);
 			}
 
 			ni.type = "number";
@@ -1988,23 +2009,23 @@ function openSettings() {
 				saveSettings();
 			};
 
-			settingsPage.appendChild(ni);
+			settingsContent.appendChild(ni);
 		}
 
 		function createTextbox(key, title, description) {
-			settingsPage.appendChild(createElementWithText("h3", title));
-			settingsPage.appendChild(createElementWithText("div", description));
+			settingsContent.appendChild(createElementWithText("h3", title));
+			settingsContent.appendChild(createElementWithText("div", description));
 
 			const tb = document.createElement("input");
 			tb.type = "text";
 			tb.id = "setting-" + key;
 			tb.value = getIndexed(key);
 			tb.onchange = () => { setIndexed(key, tb.value); saveSettings(); };
-			settingsPage.appendChild(tb);
+			settingsContent.appendChild(tb);
 		}
 
 		{
-			settingsPage.appendChild(createElementWithText("h1", "Settings"));
+			settingsContent.appendChild(createElementWithText("h1", "Settings"));
 
 			createNumberInput("settings.zoom", "Zoom", "", 0.5, 2.0, 0.1);
 			createCheckbox("settings.hideAppInstallButton", "Hide app install button");
@@ -2014,10 +2035,26 @@ function openSettings() {
 			createNumberInput("settings.emoteSize", "Emote resolution", "The maximum vertical emote resolution multiplier", 1, 4);
 			createCheckbox("settings.developer", "Developer mode");
 
-			settingsPage.appendChild(createElementWithText("h2", "Recent messages"));
+			settingsContent.appendChild(createElementWithText("h1", "Account"));
+			settingsContent.appendChild(createElementWithText("h3", "Blocked users"));
+			{
+				blockListSelect = document.createElement("select");
+				blockListSelect.size = 5;
+				blockListSelect.classList.add("blocklist");
+				settingsContent.appendChild(blockListSelect);
+
+				var unblock = createElementWithText("button", "Unblock");
+				unblock.onclick = () => {
+					unblockUser(Number(blockListSelect.value)).then(() => { });
+					blockListSelect.querySelector("option:checked").remove();
+				}
+				settingsContent.appendChild(unblock);
+
+			}
+			settingsContent.appendChild(createElementWithText("h2", "Recent messages"));
 			createNumberInput("settings.recentMessagesLimit", "Recent messages limit", "The amount of messages to fecth from the recent messages service", 0, 900);
 
-			settingsPage.appendChild(createElementWithText("h2", "File uploader"));
+			settingsContent.appendChild(createElementWithText("h2", "File uploader"));
 			createTextbox("settings.uploaderUrl", "Upload URL", "");
 			createTextbox("settings.uploaderField", "File field", "");
 			createTextbox("settings.uploaderLinkFormat", "Link format", "");
@@ -2025,6 +2062,10 @@ function openSettings() {
 			createCheckbox("settings.uploaderUploadProgress", "Monitor upload progress");
 		}
 	}
+
+	createBlockList();
+
+	settingsPage.onShown = createBlockList;
 }
 
 function createElementWithText(type, text) {
@@ -2169,6 +2210,7 @@ class Tabber {
 
 		this.currentPage = page;
 		this.onPageSwitched(page);
+		if (page.onShown) page.onShown();
 
 		for (var p of this.pageList.children) {
 			if (p == page) {
