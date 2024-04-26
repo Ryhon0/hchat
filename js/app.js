@@ -1753,6 +1753,9 @@ function saveAccounts() {
 function onAccountReady(acc) {
 	acc.irc = new ChatClient(acc.name.toLowerCase(), acc.token);
 	acc.irc.onMessage = (msg) => {
+		if(msg.command == "CLEARCHAT" || msg.command == "CLEARMSG")
+			return;
+
 		if (msg.command == "GLOBALUSERSTATE" && msg.userId() == acc.id) {
 			// VIP and mod stuff
 		}
