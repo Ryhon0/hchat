@@ -454,16 +454,15 @@ async function loaded() {
 		processMessage(msg);
 	};
 
-	var status = document.getElementById("status");
 	anonClient.onConnect = (ev) => {
 		console.log(ev);
-		status.classList.add("connected");
-		status.classList.remove("disconnected");
+		textInput.classList.add("connected");
+		textInput.classList.remove("disconnected");
 	};
 	anonClient.onDisconnect = (ev) => {
 		console.log(ev);
-		status.classList.add("disconnected");
-		status.classList.remove("connected");
+		textInput.classList.add("disconnected");
+		textInput.classList.remove("connected");
 	};
 
 	var login = localStorage.getItem("login");

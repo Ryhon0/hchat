@@ -156,23 +156,18 @@ body {
 	vertical-align: middle;
 	font-family: FreeSans, Sans;
 	padding: 0.25em;
+	
+	border-left: 0.25em solid #555;
 }
 
-#status
+#textInput.connected
 {
-	background-color: rgb(156, 156, 156);
-	width: 0.25em;
-	height: 100%;
+	border-left: 0.25em solid lime;
 }
 
-#status.connected
+#textInput.disconnected
 {
-	background-color: lime;
-}
-
-#status.disconnected
-{
-	background-color: red;
+	border-left: 0.25em solid red;
 }
 
 button {
