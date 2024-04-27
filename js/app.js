@@ -925,10 +925,13 @@ function timelinePush(tl, msg, before = undefined) {
 
 		/** @type { Channel } */
 		var ch = tl.channel;
-		ch.unread = true;
-		ch.observer.observe(msg);
 
-		ch.updateTab();
+		if(!tl.classList.contains("blocked"))
+		{
+			ch.unread = true;
+			ch.observer.observe(msg);
+			ch.updateTab();
+		}
 	}
 	else {
 		tl.insertBefore(msg, before);
