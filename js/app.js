@@ -10,11 +10,18 @@ var textInput;
 var anonClient;
 
 var hchat = new HChat();
+/** @type { Element } */
 var tlbox;
+/** @type { Element } */
 var channelList;
+/** @type { Element } */
 var accountButton;
+/** @type { Element } */
 var currentAccountAvatar;
+/** @type { Element } */
 var dropZone;
+/** @type { Element } */
+var scrollToBottomButton;
 
 /** @type { Element } */
 var tooltip;
@@ -149,6 +156,11 @@ async function loaded() {
 		}
 	}
 
+	scrollToBottomButton = document.getElementById("scrollToBottom");
+	scrollToBottomButton.onclick = () => 
+	{
+		selectedChannel.autoscroll = true;
+	};
 	textInput = document.getElementById("textInput");
 	sendButton = document.getElementById("sendButton");
 
@@ -178,7 +190,14 @@ async function loaded() {
 	setInterval(() => {
 		if (selectedChannel) {
 			if (selectedChannel.autoscroll) {
+				scrollToBottomButton.classList.add("hidden");
 				selectedChannel.timeline.scrollTop = selectedChannel.timeline.scrollHeight;
+			}
+			else
+			{
+				var diff = selectedChannel.timeline.scrollTop - selectedChannel.timeline.scrollHeight + selectedChannel.timeline.clientHeight;
+				if(Math.abs(diff) < 8) selectedChannel.autoscroll = true;
+				else scrollToBottomButton.classList.remove("hidden");
 			}
 		}
 	}, 10);
@@ -1055,7 +1074,7 @@ function getFullMessageElement(channel, pm, mentionCb = undefined) {
 	var mi = document.createElement("span");
 
 	var namecolor = pm.tags.color;
-	cachedUserColors.set(pm.userId(), namecolor);
+	cachedUserColors.set(pm.username(), namecolor);
 	cachedUsernames.set(pm.userId(), pm.displayName());
 
 	var isAction = false;
