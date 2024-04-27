@@ -157,8 +157,7 @@ async function loaded() {
 	}
 
 	scrollToBottomButton = document.getElementById("scrollToBottom");
-	scrollToBottomButton.onclick = () => 
-	{
+	scrollToBottomButton.onclick = () => {
 		selectedChannel.autoscroll = true;
 	};
 	textInput = document.getElementById("textInput");
@@ -193,10 +192,9 @@ async function loaded() {
 				scrollToBottomButton.classList.add("hidden");
 				selectedChannel.timeline.scrollTop = selectedChannel.timeline.scrollHeight;
 			}
-			else
-			{
+			else {
 				var diff = selectedChannel.timeline.scrollTop - selectedChannel.timeline.scrollHeight + selectedChannel.timeline.clientHeight;
-				if(Math.abs(diff) < 8) selectedChannel.autoscroll = true;
+				if (Math.abs(diff) < 8) selectedChannel.autoscroll = true;
 				else scrollToBottomButton.classList.remove("hidden");
 			}
 		}
@@ -864,7 +862,7 @@ function processMessage(pm, beforeElem = undefined) {
 				if (mentioned) {
 					mi.classList.add("mentioned");
 
-					if (!historical) {
+					if (!historical && !isUserBlocked(uid)) {
 						channel.mentioningMessages.push(mi);
 						channel.observer.observe(mi);
 
@@ -1772,7 +1770,7 @@ function saveAccounts() {
 function onAccountReady(acc) {
 	acc.irc = new ChatClient(acc.name.toLowerCase(), acc.token);
 	acc.irc.onMessage = (msg) => {
-		if(msg.command == "CLEARCHAT" || msg.command == "CLEARMSG")
+		if (msg.command == "CLEARCHAT" || msg.command == "CLEARMSG")
 			return;
 
 		if (msg.command == "GLOBALUSERSTATE" && msg.userId() == acc.id) {
