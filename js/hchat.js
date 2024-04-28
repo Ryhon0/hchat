@@ -726,6 +726,26 @@ class HChatChannel {
 	 * @returns { String[] | Emote[] | Link[] | Mention[] | CheerMote[] }
 	 */
 	foldMessageComponents(comps) {
+		{
+			function isString(o) {
+				return typeof o === 'string' || o instanceof String;
+			}
+
+			var folded = [];
+			for (var i in comps) {
+				var c = comps[i];
+				if (isString(c)) {
+					var last = folded[folded.length - 1];
+					if (isString(last)) {
+						folded[folded.length - 1] += c;
+					}
+					else folded.push(c);
+				}
+				else folded.push(c);
+			}
+			comps = folded;
+		}
+
 		// Overlay emotes
 		{
 			var folded = [];
@@ -753,7 +773,6 @@ class HChatChannel {
 						}
 					}
 				}
-
 				folded.push(c);
 			}
 			comps = folded;
