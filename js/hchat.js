@@ -111,6 +111,8 @@ class Badge {
 }
 
 class HChat {
+	twitchEmoteOverrides = new Map();
+
 	globalEmotes = new Map()
 	uniToEmoji = new Map()
 	emojis = new Map()
@@ -647,7 +649,7 @@ class HChatChannel {
 				var e = new EmoteInfo();
 				e.id = id;
 				e.name = name;
-				e.urls =
+				e.urls = this.hchat.twitchEmoteOverrides.get(id) ??
 				{
 					1: "https://static-cdn.jtvnw.net/emoticons/v2/" + id + "/default/dark/1.0",
 					2: "https://static-cdn.jtvnw.net/emoticons/v2/" + id + "/default/dark/2.0",

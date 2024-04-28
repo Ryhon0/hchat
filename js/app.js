@@ -463,6 +463,17 @@ async function loaded() {
 		hchat.badgePredictates.push(getHChatBadges);
 	}
 
+	// Old PogChamp
+	if(settings.oldPogChamp)
+	{
+		hchat.twitchEmoteOverrides.set("305954156", 
+		{
+			1: "/assets/emotes/twitch/PogChamp/1.png",
+			2: "/assets/emotes/twitch/PogChamp/2.png",
+			3: "/assets/emotes/twitch/PogChamp/3.png",
+		});
+	}
+
 	hchat.Twitch.clientID = clientID;
 	await hchat.init();
 
