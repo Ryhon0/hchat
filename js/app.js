@@ -215,8 +215,9 @@ async function loaded() {
 		document.body.appendChild(popup);
 
 		setInterval(() => {
-			document.addEventListener("click", (ev) => {
+			document.addEventListener("click", function f(ev){
 				popup.remove();
+				document.removeEventListener("click", f);
 			});
 		}, 0);
 
@@ -605,8 +606,9 @@ function processMessage(pm, beforeElem = undefined) {
 		}
 
 		setInterval(() => {
-			document.addEventListener("click", (ev) => {
+			document.addEventListener("click", function f(ev){
 				menu.remove();
+				document.removeEventListener("click", f);
 			});
 		}, 0);
 
