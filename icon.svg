@@ -27,12 +27,12 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      inkscape:zoom="1.0141844"
-     inkscape:cx="170.08742"
-     inkscape:cy="256.85665"
+     inkscape:cx="170.08741"
+     inkscape:cy="256.85664"
      inkscape:window-width="1920"
-     inkscape:window-height="1043"
-     inkscape:window-x="0"
-     inkscape:window-y="0"
+     inkscape:window-height="1011"
+     inkscape:window-x="1920"
+     inkscape:window-y="32"
      inkscape:window-maximized="1"
      inkscape:current-layer="layer1" />
   <defs
@@ -55,15 +55,11 @@
        x="0"
        y="0"
        height="135.46666" />
-    <text
-       xml:space="preserve"
-       transform="matrix(8.8037235,0,0,8.803717,-1574.4863,-1568.2743)"
+    <path
+       style="font-family:FreeSans;-inkscape-font-specification:FreeSans;white-space:pre;fill:#ffffff;stroke-width:5"
+       d="m 188.78694,186.22147 h -4.5 v 3.984 h -1.116 v -8.748 h 1.116 v 3.78 h 4.5 v -3.78 h 1.116 v 8.748 h -1.116 z"
        id="text2"
-       style="white-space:pre;shape-inside:url(#rect2);display:inline;fill:#ffffff;stroke-width:5"><tspan
-         x="182.21094"
-         y="190.20547"
-         id="tspan4"><tspan
-           style="font-family:FreeSans;-inkscape-font-specification:FreeSans"
-           id="tspan2">H</tspan></tspan></text>
+       transform="matrix(8.8037235,0,0,8.803717,-1574.4863,-1568.2743)"
+       aria-label="H" />
   </g>
 </svg>
