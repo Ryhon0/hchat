@@ -709,7 +709,7 @@ class HChatChannel {
 				}
 			}
 
-			var emote = this.hchat.uniToEmoji.get(s) ?? this.channelEmotes.get(s) ?? this.hchat.globalEmotes.get(s) ?? twitchEmotes.get(s);
+			var emote = this.hchat.uniToEmoji.get(s) ?? this.hchat.uniToEmoji.get(s + '\uFE0F') ?? this.channelEmotes.get(s) ?? this.hchat.globalEmotes.get(s) ?? twitchEmotes.get(s);
 			if (emote) {
 				var e = new Emote();
 				e.info = emote;

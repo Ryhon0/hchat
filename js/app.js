@@ -1828,9 +1828,14 @@ async function getTwitchEmotesForChannel(account, channel_id) {
 			ei.id = e.id;
 			ei.name = e.name;
 
-			for (var s in e.scale) {
-				var num = Number(s);
-				ei.urls[num] = "https://static-cdn.jtvnw.net/emoticons/v2/" + e.id + "/default/dark/" + s + ".0";
+			ei.urls = hchat.twitchEmoteOverrides.get(e.id);
+			if(!ei.urls)
+			{
+				ei.urls = {};
+				for (var s in e.scale) {
+					var num = Number(s);
+					ei.urls[num] = "https://static-cdn.jtvnw.net/emoticons/v2/" + e.id + "/default/dark/" + s + ".0";
+				}
 			}
 
 			account.emotesForChannel[channel_id].set(ei.id, ei);
@@ -1917,6 +1922,7 @@ function uploadFile(f) {
 				}
 				else {
 					var c = document.createElement("div");
+					c.style.flexDirection = "column";
 					{
 						var b = document.createElement("div");
 						b.innerText = "File uploaded to ";
@@ -2109,10 +2115,14 @@ function openSettings() {
 			createCheckbox("settings.hideHchatUserBadge", "Hide HChat user badges");
 			createCheckbox("settings.hideHchatNonce", "Hide my HChat user badge");
 			createNumberInput("settings.maxMessages", "Max messages", "The maximum amount of message in a timeline. Lower values may improve performacne", 50, 2000);
-			createNumberInput("settings.emoteSize", "Emote resolution", "The maximum vertical emote resolution multiplier", 1, 4);
 			createCheckbox("settings.developer", "Developer mode");
+			
+			settingsContent.appendChild(createElementWithText("h2", "Emotes"));
+			settingsContent.appendChild(createElementWithText("div", "These settings will require an app restart"));
+			createNumberInput("settings.emoteSize", "Emote resolution", "The maximum vertical emote resolution multiplier", 1, 4);
+			createCheckbox("settings.oldPogChamp", "Return old PogChamp");
 
-			settingsContent.appendChild(createElementWithText("h1", "Account"));
+			settingsContent.appendChild(createElementWithText("h2", "Account"));
 			settingsContent.appendChild(createElementWithText("h3", "Blocked users"));
 			{
 				blockListSelect = document.createElement("select");
@@ -2189,6 +2199,7 @@ class Settings {
 	developer = false
 
 	emoteSize = 3
+	oldPogChamp = true
 
 	maxMessages = 1000
 
