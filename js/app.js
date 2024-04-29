@@ -4,6 +4,7 @@ var cachedUserColors = new Map()
 var cachedUsernames = new Map()
 
 var sendButton;
+/** @type { HTMLTextAreaElement } */
 var textInput;
 
 /** @type { ChatClient } */
@@ -25,6 +26,8 @@ var scrollToBottomButton;
 
 /** @type { Element } */
 var tooltip;
+/** @type { Element } */
+var contextMenu;
 
 async function selfUpdate() {
 	var loading = document.getElementById("loadingScreen");
@@ -45,9 +48,6 @@ async function selfUpdate() {
 		cache: 'reload'
 	});
 	var freshDate = new Date(fresh.headers.get("Last-Modified"));
-
-	console.log("Cached date: " + cachedDate);
-	console.log("Fresh date: " + freshDate);
 
 	if (freshDate > cachedDate) {
 		var toUpdate = [];
@@ -215,7 +215,7 @@ async function loaded() {
 		document.body.appendChild(popup);
 
 		setInterval(() => {
-			document.addEventListener("click", function f(ev){
+			document.addEventListener("click", function f(ev) {
 				popup.remove();
 				document.removeEventListener("click", f);
 			});
@@ -428,14 +428,33 @@ async function loaded() {
 
 	textInput.addEventListener("keydown", (ev) => {
 		if (ev.keyCode == 13) {
-			var text = textInput.value;
-			sendMessage(text);
+			if (suggestionBox) {
+				suggestionBox.children[suggestionIndex].click();
+			}
+			else {
+				var text = textInput.value;
+				sendMessage(text);
 
-			if (!ev.ctrlKey) {
-				textInput.value = "";
-				setReply();
+				if (!ev.ctrlKey) {
+					textInput.value = "";
+					setReply();
+				}
 			}
 			ev.preventDefault();
+		}
+		else if (ev.keyCode == 38 || ev.keyCode == 9) {
+			moveSelectionCursor(-1);
+			ev.preventDefault();
+		}
+		else if (ev.keyCode == 40) {
+			moveSelectionCursor(1);
+			ev.preventDefault();
+		}
+		else if (ev.keyCode == 27) {
+			if (suggestionBox) {
+				closeSuggestionBox();
+				ev.preventDefault();
+			}
 		}
 	});
 
@@ -444,6 +463,17 @@ async function loaded() {
 		sendMessage(text);
 		textInput.value = "";
 		setReply();
+	});
+
+	var autocompleteTimeout;
+	textInput.addEventListener("input", (ev) => {
+		clearTimeout(autocompleteTimeout);
+		if (suggestionBox)
+			closeSuggestionBox();
+
+		autocompleteTimeout = setTimeout(() => {
+			suggestAutocomplete();
+		}, 120);
 	});
 
 	// HChat badges
@@ -465,14 +495,13 @@ async function loaded() {
 	}
 
 	// Old PogChamp
-	if(settings.oldPogChamp)
-	{
-		hchat.twitchEmoteOverrides.set("305954156", 
-		{
-			1: "/assets/emotes/twitch/PogChamp/1.png",
-			2: "/assets/emotes/twitch/PogChamp/2.png",
-			3: "/assets/emotes/twitch/PogChamp/3.png",
-		});
+	if (settings.oldPogChamp) {
+		hchat.twitchEmoteOverrides.set("305954156",
+			{
+				1: "/assets/emotes/twitch/PogChamp/1.png",
+				2: "/assets/emotes/twitch/PogChamp/2.png",
+				3: "/assets/emotes/twitch/PogChamp/3.png",
+			});
 	}
 
 	hchat.Twitch.clientID = clientID;
@@ -484,12 +513,10 @@ async function loaded() {
 	};
 
 	anonClient.onConnect = (ev) => {
-		console.log(ev);
 		textInput.classList.add("connected");
 		textInput.classList.remove("disconnected");
 	};
 	anonClient.onDisconnect = (ev) => {
-		console.log(ev);
 		textInput.classList.add("disconnected");
 		textInput.classList.remove("connected");
 	};
@@ -606,7 +633,7 @@ function processMessage(pm, beforeElem = undefined) {
 		}
 
 		setInterval(() => {
-			document.addEventListener("click", function f(ev){
+			document.addEventListener("click", function f(ev) {
 				menu.remove();
 				document.removeEventListener("click", f);
 			});
@@ -1203,11 +1230,17 @@ function authRedirect() {
  * @param { Element } what 
  */
 function showTooltip(parent, what, clickable = false) {
-	if (tooltip)
-		tooltip.remove();
-
-	tooltip = what;
-	document.body.appendChild(tooltip);
+	if (clickable) {
+		if (contextMenu)
+			contextMenu.remove();
+		contextMenu = what;
+	}
+	else {
+		if (tooltip)
+			tooltip.remove();
+		tooltip = what;
+	}
+	document.body.appendChild(what);
 
 	what.classList.add("tooltip");
 	if (clickable)
@@ -1254,7 +1287,7 @@ class ChatClient {
 	pingIntervalTime = 2000;
 	pingTimeout;
 
-	connectionTimeoutTime = 10000;
+	connectionTimeoutTime = 5000;
 	connectionTimeout;
 
 	/**
@@ -1324,7 +1357,6 @@ class ChatClient {
 		}
 
 		this.ws.onerror = (ev) => {
-			console.log(ev);
 			this.ws.close();
 		};
 
@@ -1335,7 +1367,7 @@ class ChatClient {
 
 			setTimeout(() => {
 				this.init(user, token);
-			}, 5000);
+			}, 1000);
 		}
 	}
 
@@ -1831,8 +1863,7 @@ async function getTwitchEmotesForChannel(account, channel_id) {
 			ei.name = e.name;
 
 			ei.urls = hchat.twitchEmoteOverrides.get(e.id);
-			if(!ei.urls)
-			{
+			if (!ei.urls) {
 				ei.urls = {};
 				for (var s in e.scale) {
 					var num = Number(s);
@@ -2118,7 +2149,7 @@ function openSettings() {
 			createCheckbox("settings.hideHchatNonce", "Hide my HChat user badge");
 			createNumberInput("settings.maxMessages", "Max messages", "The maximum amount of message in a timeline. Lower values may improve performacne", 50, 2000);
 			createCheckbox("settings.developer", "Developer mode");
-			
+
 			settingsContent.appendChild(createElementWithText("h2", "Emotes"));
 			settingsContent.appendChild(createElementWithText("div", "These settings will require an app restart"));
 			createNumberInput("settings.emoteSize", "Emote resolution", "The maximum vertical emote resolution multiplier", 1, 4);
@@ -2387,4 +2418,170 @@ function pushInputText(tx) {
 		textInput.value += ' ';
 	}
 	textInput.value += tx;
+}
+
+class AutocompleteSuggestion {
+	image = ""
+	text = ""
+}
+
+var suggestionBox;
+var suggestionIndex = 0;
+function suggestAutocomplete() {
+	if (suggestionBox)
+		suggestionBox.remove();
+	suggestionIndex = 0;
+
+	var text = textInput.value;
+
+	text = text.slice(0, textInput.selectionStart);
+	{
+		var idx = text.lastIndexOf(' ');
+		if (idx != -1)
+			text = text.slice(idx + 1);
+	}
+	if (text.length <= 2) return;
+
+	if (text.length) {
+		text = text.toLowerCase();
+
+		/** @type { Iterator } */
+		var it;
+
+		if (text[0] == ':')
+			it = getEmoteSuggestions(text.slice(1));
+		else if (text[0] == '@')
+			it = getMentionSuggestions(text.slice(1));
+		else
+			it = getEmoteOrMentionSuggestions(text);
+
+		var suggs = [];
+		var res = it.next();
+		while (!res.done) {
+			var v = res.value;
+			if (v)
+				suggs.push(v);
+
+			res = it.next();
+		}
+
+		{
+			suggestionBox = document.createElement("div");
+			suggestionBox.classList.add("autocomplete");
+			suggestionBox.classList.add("contextMenu");
+			suggestionBox.classList.add("tooltip");
+			document.body.appendChild(suggestionBox);
+
+			for (const s of suggs) {
+				var c = document.createElement("div");
+
+				if (s.image) {
+					var img = document.createElement("img");
+					img.src = s.image;
+					c.appendChild(img);
+				}
+
+				c.appendChild(document.createTextNode(s.text));
+
+				c.onclick = () => { suggestionPush(s.text); };
+				suggestionBox.appendChild(c);
+			}
+
+			var rect = textInput.getBoundingClientRect();
+			var x = rect.left;
+			var y = rect.top - suggestionBox.clientHeight;
+
+			suggestionBox.style.top = y + "px";
+			suggestionBox.style.left = x + "px";
+
+			moveSelectionCursor(-1);
+		}
+	}
+}
+
+function moveSelectionCursor(by) {
+	if (!suggestionBox) return;
+
+	var old = suggestionIndex;
+
+	suggestionIndex += by;
+	if (suggestionIndex == -1)
+		suggestionIndex = suggestionBox.children.length - 1;
+	else suggestionIndex %= suggestionBox.children.length;
+
+	var oldElem = suggestionBox.children[old];
+	if (oldElem) oldElem.classList.remove("active");
+
+	var newElem = suggestionBox.children[suggestionIndex];
+	if (newElem) {
+		newElem.classList.add("active");
+		newElem.scrollIntoView();
+	}
+}
+
+function suggestionPush(text) {
+	var pre = "";
+
+	var idx = textInput.value.lastIndexOf(' ', textInput.selectionStart);
+	if (idx != -1) pre = textInput.value.slice(0, idx + 1);
+
+	var post = textInput.value.slice(textInput.selectionStart, textInput.value.length);
+
+	textInput.value = pre + text + " " + post;
+	textInput.selectionStart = pre.length + text.length + 1;
+
+	closeSuggestionBox();
+}
+
+function closeSuggestionBox() {
+	suggestionBox.remove();
+	suggestionBox = undefined;
+}
+
+function* getEmoteSuggestions(text) {
+	for (var map of [
+		activeAccount.emotesForChannel[selectedChannel.id],
+		selectedChannel.hchannel.channelEmotes,
+		hchat.globalEmotes,
+		hchat.emojis]) {
+
+		for (var u of map.values()) {
+			if (u.getName().toLowerCase().includes(text)) {
+				var sug = new AutocompleteSuggestion();
+				sug.text = u.getName();
+				sug.image = u.getImageURL(settings.emoteSize);
+
+				yield sug;
+			}
+			else yield;
+		}
+	}
+}
+
+function* getMentionSuggestions(text) {
+	for (var u of cachedUsernames.values()) {
+		if (u.toLowerCase().includes(text)) {
+			var sug = new AutocompleteSuggestion();
+			sug.text = "@" + u;
+			yield sug;
+		}
+		else yield;
+	}
+}
+
+function* getEmoteOrMentionSuggestions(text) {
+	var it = getEmoteSuggestions(text);
+
+	var res = it.next();
+	while (!res.done) {
+		yield res.value;
+		res = it.next();
+	}
+
+	it = getMentionSuggestions(text);
+	res = it.next();
+	while (!res.done) {
+		yield res.value;
+		res = it.next();
+	}
 }

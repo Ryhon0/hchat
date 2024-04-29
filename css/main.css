@@ -541,3 +541,37 @@ input:placeholder-shown {
 .hideappinstallbutton #installButton {
 	display: none;
 }
+
+.autocomplete
+{
+	max-height: 50vh;
+	max-width: 50vh;
+	overflow-y: auto;
+
+	overflow-wrap: break-word;
+	word-wrap: break-word;
+	word-break: break-all;
+	word-break: break-word;
+}
+
+.autocomplete > *
+{
+	align-items: center;
+	display: flex;
+	gap: 0.5em;
+}
+
+.autocomplete > *:nth-child(2n)
+{
+	background-color: #000A;
+}
+
+.autocomplete > .active
+{
+	background-color: #2d4c21;
+}
+
+.autocomplete img
+{
+	height: 1.5em;
+}
