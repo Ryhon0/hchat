@@ -682,12 +682,15 @@ function processMessage(pm, beforeElem = undefined) {
 					}
 				}
 
-				var duration = Number(pm.tags["ban-duration"]);
 				var username = cachedUsernames.get(timedOutUser) ?? (timedOutUser + "");
-				{
-					var durationText = prettyTime(duration);
-					micon.appendChild(document.createTextNode(username + " has been timed out for " + durationText));
+				if (pm.tags["ban-duration"]) {
+					var duration = Number(pm.tags["ban-duration"]);
+					{
+						var durationText = prettyTime(duration);
+						micon.appendChild(document.createTextNode(username + " has been timed out for " + durationText));
+					}
 				}
+				else micon.appendChild(document.createTextNode(username + " has been timed out"));
 				timelinePush(channel.timeline, mi, beforeElem);
 			}
 			else {
