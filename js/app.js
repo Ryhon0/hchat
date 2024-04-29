@@ -942,8 +942,7 @@ function timelinePush(tl, msg, before = undefined) {
 		/** @type { Channel } */
 		var ch = tl.channel;
 
-		if(!tl.classList.contains("blocked"))
-		{
+		if (!msg.classList.contains("blocked")) {
 			ch.unread = true;
 			ch.observer.observe(msg);
 			ch.updateTab();
