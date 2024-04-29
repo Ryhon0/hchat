@@ -2465,6 +2465,7 @@ function suggestAutocomplete() {
 			res = it.next();
 		}
 
+		if(suggs.length)
 		{
 			suggestionBox = document.createElement("div");
 			suggestionBox.classList.add("autocomplete");
