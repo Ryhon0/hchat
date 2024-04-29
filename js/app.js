@@ -2529,6 +2529,7 @@ function suggestionPush(text) {
 
 	textInput.value = pre + text + " " + post;
 	textInput.selectionStart = pre.length + text.length + 1;
+	textInput.focus();
 
 	closeSuggestionBox();
 }
