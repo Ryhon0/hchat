@@ -2604,10 +2604,14 @@ function* getEmoteSuggestions(text) {
 }
 
 function* getMentionSuggestions(text) {
-	for (var u of cachedUsernames.values()) {
-		if (u.toLowerCase().includes(text)) {
+	for (var u of cachedUsernames.entries()) {
+		if (isUserBlocked(u[0])) {
+			yield;
+			continue;
+		};
+		if (u[1].toLowerCase().includes(text)) {
 			var sug = new AutocompleteSuggestion();
-			sug.text = "@" + u;
+			sug.text = "@" + u[1];
 			yield sug;
 		}
 		else yield;
