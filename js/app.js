@@ -2579,7 +2579,8 @@ function suggestionPush(text) {
 }
 
 function closeSuggestionBox() {
-	suggestionBox.remove();
+	if (suggestionBox)
+		suggestionBox.remove();
 	suggestionBox = undefined;
 }
 
