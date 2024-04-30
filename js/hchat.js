@@ -47,6 +47,11 @@ class Emote {
 	 */
 	info;
 	overlays = []
+
+	constructor(inf = undefined) {
+		if (inf)
+			this.info = inf
+	}
 }
 
 class Link {
@@ -133,6 +138,9 @@ class HChat {
 	globalFFZBadgeOwners = {}
 	globalFFZBadges = new Map()
 	bttvBadges = new Map()
+
+	sevenTVEventClient = new SevenTVEventAPI();
+	channels = [];
 
 	async init() {
 		// Run requests concurently
@@ -260,8 +268,45 @@ class HChat {
 				console.warn(e);
 			}
 
-			// Here's where I would put the 7TV badge provider
-			// IF THEY DOCUMENTED THEIR COSMETICS API
+			this.sevenTVEventClient.onEvent = e => {
+				var type = e.type;
+				var body = e.body;
+
+				switch (type) {
+					case "emote_set.update":
+						var byWho = {
+							name: body.actor.display_name ?? body.actor.username,
+							id: Number(body.actor.connections.find(c => c.platform == "TWITCH").id)
+						}
+						var setId = body.id;
+
+						var channel = this.channels.find(c => c.sevenTVEmoteSetID == setId);
+						if (!channel) return;
+
+						if (body.pushed) {
+							for (var eo of body.pushed) {
+								var ei = this.processSevenTVEmote(eo.value);
+								channel.onEmoteAdded(byWho, ei);
+								channel.channelEmotes.set(ei.getName(), ei);
+							}
+						}
+
+						if (body.pulled) {
+							for (var eo of body.pulled) {
+								var id = eo.old_value.id;
+
+								var e = channel.channelEmotes.entries()
+									.find(e => e[1].provider == hchatEmoteProviderSevenTV && e[1].id == id);
+								var ei = e[1];
+								channel.onEmoteRemoved(byWho, ei);
+								channel.channelEmotes.delete(e[0]);
+							}
+						}
+						break;
+					default:
+						break;
+				}
+			};
 		}
 
 		// Global BTTV emotes
@@ -394,23 +439,29 @@ class HChat {
 		for (var i = 0; i < elist.length; i++) {
 			var e = elist[i];
 
-			var ee = new EmoteInfo();
-			ee.id = e.id;
-			ee.urls = {
-				4: "https:" + e.data.host.url + "/4x.webp",
-				3: "https:" + e.data.host.url + "/3x.webp",
-				2: "https:" + e.data.host.url + "/2x.webp",
-				1: "https:" + e.data.host.url + "/1x.webp",
-			}
-			ee.name = e.data.name;
-			ee.alias = e.name;
-			ee.provider = hchatEmoteProviderSevenTV;
-			ee.overlay = (e.flags & 1) != 0;
+			var ee = this.processSevenTVEmote(e);
 
 			list.set(ee.alias ?? ee.name, ee);
 		}
 
 		return list;
+	}
+
+	processSevenTVEmote(e) {
+		var ee = new EmoteInfo();
+		ee.id = e.id;
+		ee.urls = {
+			4: "https:" + e.data.host.url + "/4x.webp",
+			3: "https:" + e.data.host.url + "/3x.webp",
+			2: "https:" + e.data.host.url + "/2x.webp",
+			1: "https:" + e.data.host.url + "/1x.webp",
+		}
+		ee.name = e.data.name;
+		ee.alias = e.name;
+		ee.provider = hchatEmoteProviderSevenTV;
+		ee.overlay = (e.flags & 1) != 0;
+
+		return ee;
 	}
 
 	/**
@@ -478,6 +529,10 @@ class HChatChannel {
 	ffzVIPBadge;
 	ffzModBadge;
 
+	sevenTVEmoteSetID;
+	onEmoteAdded = (byWho, emoteInfo) => { };
+	onEmoteRemoved = (byWho, emoteInfo) => { };
+
 	/**
 	 * @param { HChat } hchat 
 	 * @param { Number } channelId 
@@ -485,6 +540,14 @@ class HChatChannel {
 	constructor(hchat, channelId) {
 		this.hchat = hchat;
 		this.channelId = channelId;
+
+		hchat.channels.push(this);
+	}
+
+	close() {
+		if (this.sevenTVEmoteSetID) {
+			this.hchat.sevenTVEventClient.unsubscribe("emote_set.update", { "object_id": this.sevenTVEmoteSetID });
+		}
 	}
 
 	async init() {
@@ -509,6 +572,8 @@ class HChatChannel {
 		{
 			try {
 				this.channelEmotes = new Map([...this.channelEmotes, ...this.hchat.processSevenTVEmotes(sevenTVUser.emote_set.emotes)]);
+				this.sevenTVEmoteSetID = sevenTVUser.emote_set.id;
+				this.hchat.sevenTVEventClient.subscribe("emote_set.update", { "object_id": this.sevenTVEmoteSetID });
 			}
 			catch (e) {
 				console.warn("Failed to load 7TV emotes for channel " + this.channelId);

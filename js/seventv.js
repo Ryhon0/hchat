@@ -17,6 +17,8 @@ const sevenTVAPIGetUserConnectionRoute = "users/{0}/{1}";
 const sevenTVAPIGetEmoteSetsRoute = "emote-sets/{0}";
 const sevenTVAPIEmoteRoute = "emotes/{0}";
 
+const sevenTVEventAPIURL = "wss://events.7tv.io/v3";
+
 class SevenTVAPI {
 	baseURL = "7tv.io";
 	APIVersion = "v3";
@@ -70,35 +72,68 @@ class SevenTVAPI {
 	async getEmote(emote_id) {
 		return await getJSON(this.buildAPIURL(sevenTVAPIEmoteRoute.format(emote_id)));
 	}
-} 
+}
 
-class SevenTVEventAPI
-{
-	onEvent = (event) => { console.log("<=="); console.log(event); }
+class SevenTVEventAPI {
+	onEvent = (event) => { }
 	/** @type { WebSocket } */
-	ws = new WebSocket("wss://events.7tv.io/v3")
+	ws = new WebSocket(sevenTVEventAPIURL)
+	pending = [];
+	sessionId;
 
-	constructor()
-	{
-		this.ws.onmessage = (ev) => { this.onEvent(JSON.parse(ev.data));};
-		//this.sendMessage();
+	constructor() {
+		this.ws.onmessage = (ev) => {
+			var o = JSON.parse(ev.data);
+			if(o.op == 1)
+			{
+				// Hello
+				if(!this.sessionId)
+					this.sessionId = o.d.session_id;
+			}
+			else if(o.op == 4 || o.op == 7)
+			{
+				// Reconnect
+				this.ws.close();
+			}
+			else if(o.op == 6)
+			{
+				// Error
+				console.error(o);
+			}
+			// Other events
+			else if(o.op == 0)
+			{
+				this.onEvent(o.d);
+			}
+		};
+		this.ws.onopen = (ev) => {
+			if(this.sessionId)
+				this.sendMessage(34, {"session_id": this.sessionId});
+
+			for (var payload of this.pending)
+				this.sendObject(payload);
+			this.pending = [];
+		};
 	}
 
-	sendMessage(op, obj)
-	{
-		var payload = {"op": op, "t": Date.now().valueOf(), "d": obj };
-		console.log("==>");
-		console.log(payload);
-		this.ws.send()
+	sendMessage(op, obj) {
+		var payload = { "op": op, "t": Date.now().valueOf(), "d": obj };
+
+		if (this.ws.readyState == 1)
+			this.sendObject(payload);
+		else this.pending.push(payload);
 	}
 
-	subscribe(type,cond)
+	sendObject(obj)
 	{
-		this.sendMessage(35, {"type":type,"condition": cond})
+		this.ws.send(JSON.stringify(obj));
 	}
 
-	unsubscribe(type)
-	{
-		this.sendMessage(36, {"type":type,"condition": cond});
+	subscribe(type, cond) {
+		this.sendMessage(35, { "type": type, "condition": cond })
+	}
+
+	unsubscribe(type) {
+		this.sendMessage(36, { "type": type, "condition": cond });
 	}
 }

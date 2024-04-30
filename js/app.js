@@ -1071,12 +1071,7 @@ function getMessageComponentsElement(channel, pm, mentionCb = undefined) {
 			ms.appendChild(a);
 		}
 		else if (c instanceof Mention) {
-			var s = document.createElement("span");
-			s.classList.add("mention");
-			s.innerText = "@" + c.username;
-			s.style.color = cachedUserColors.get(c.username.toLowerCase());
-			ms.appendChild(s);
-
+			ms.appendChild(createMentionElement(c.username));
 			if (mentionCb) mentionCb(c.username);
 		}
 		else if (c instanceof CheerMote) {
@@ -1214,6 +1209,14 @@ function createEmoteElement(c) {
 	}
 
 	return imgspan;
+}
+
+function createMentionElement(name) {
+	var s = document.createElement("span");
+	s.classList.add("mention");
+	s.innerText = "@" + name;
+	s.style.color = cachedUserColors.get(name.toLowerCase());
+	return s;
 }
 
 function authRedirect() {
@@ -1478,6 +1481,7 @@ class Channel {
 
 	close() {
 		anonClient.part(this.name.toLowerCase());
+		this.hchannel.close();
 	}
 
 	updateTab() {
@@ -1613,6 +1617,26 @@ async function openChannelChat(name, id = undefined) {
 	ch.name = name;
 	ch.id = id;
 	ch.hchannel = new HChatChannel(hchat, ch.id);
+	ch.hchannel.onEmoteAdded = ((who, emote) => {
+		var mi = document.createElement("div");
+		var micon = document.createElement("div");
+		mi.appendChild(micon);
+		micon.appendChild(createMentionElement(who.name));
+		micon.appendChild(document.createTextNode(" added "));
+		micon.appendChild(createEmoteElement(new Emote(emote)));
+		micon.appendChild(document.createTextNode(" " + emote.getName()));
+		timelinePush(ch.timeline, mi);
+	});
+	ch.hchannel.onEmoteRemoved = ((who, emote) => {
+		var mi = document.createElement("div");
+		var micon = document.createElement("div");
+		mi.appendChild(micon);
+		micon.appendChild(createMentionElement(who.name));
+		micon.appendChild(document.createTextNode(" removed "));
+		micon.appendChild(createEmoteElement(new Emote(emote)));
+		micon.appendChild(document.createTextNode(" " + emote.getName()));
+		timelinePush(ch.timeline, mi);
+	});
 
 	ch.timeline = document.createElement("div");
 	ch.timeline.classList.add("timeline");
