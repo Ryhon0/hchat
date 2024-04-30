@@ -1,4 +1,6 @@
 const clientID = "atu01l1tzhhfpzobn87uwwllq5pt4e";
+const gitPage = "https://github.com/Ryhon0/hchat"
+const issuesPage = "https://github.com/Ryhon0/hchat/issues/new"
 
 var cachedUserColors = new Map()
 var cachedUsernames = new Map()
@@ -2141,6 +2143,43 @@ function openSettings() {
 		}
 
 		{
+			{
+				var about = document.createElement("div");
+				about.classList.add("about");
+
+				var img = document.createElement("img");
+				img.classList.add("icon");
+				img.src = "/icon.svg";
+				about.appendChild(img);
+
+				{
+					var d = document.createElement("div");
+					d.appendChild(createElementWithText("h1", "HChat"));
+					d.appendChild(createElementWithText("div", "Last updated " + localStorage.getItem("lastUpdated")));
+					about.appendChild(d);
+				}
+				
+				{
+					var d = document.createElement("div");
+					d.classList.add("links");
+					{
+						var a  = createElementWithText("a", "Source Code");
+						a.href = gitPage;
+						a.target = "_blank";
+						d.appendChild(a);
+					}
+					{
+						var a  = createElementWithText("a", "Report an issue");
+						a.href = issuesPage;
+						a.target = "_blank";
+						d.appendChild(a);
+					}
+					about.appendChild(d);
+				}
+
+				settingsContent.appendChild(about);
+			}
+
 			settingsContent.appendChild(createElementWithText("h1", "Settings"));
 
 			createNumberInput("settings.zoom", "Zoom", "", 0.5, 2.0, 0.1);
@@ -2477,7 +2516,7 @@ function suggestAutocomplete() {
 				var c = document.createElement("div");
 
 				if (s.image) {
-					var img = document.createElement("img");
+					var d = document.createElement("img");
 					img.src = s.image;
 					c.appendChild(img);
 				}

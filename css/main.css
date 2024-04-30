@@ -575,3 +575,26 @@ input:placeholder-shown {
 {
 	height: 1.5em;
 }
+
+.about
+{
+	display: flex;
+	gap: 0.5em;
+}
+
+.about .links
+{
+	gap: 0.5em;
+	text-align: center;
+}
+
+.about > *
+{
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+.about .icon{
+	height: 8em;
+}
