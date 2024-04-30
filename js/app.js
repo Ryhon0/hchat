@@ -182,10 +182,13 @@ async function loaded() {
 		setReply(undefined);
 		closeEmojiList();
 
-		if (selectedChannel)
+		if (selectedChannel) {
 			textInput.parentElement.classList.remove("hidden");
-		else
+		}
+		else {
+			closeSuggestionBox();
 			textInput.parentElement.classList.add("hidden");
+		}
 	};
 
 	setInterval(() => {
@@ -434,13 +437,7 @@ async function loaded() {
 				suggestionBox.children[suggestionIndex].click();
 			}
 			else {
-				var text = textInput.value;
-				sendMessage(text);
-
-				if (!ev.ctrlKey) {
-					textInput.value = "";
-					setReply();
-				}
+				sendMessageFromInputBox(ev.ctrlKey);
 			}
 			ev.preventDefault();
 		}
@@ -461,10 +458,7 @@ async function loaded() {
 	});
 
 	sendButton.addEventListener("click", (ev) => {
-		var text = textInput.value;
-		sendMessage(text);
-		textInput.value = "";
-		setReply();
+		sendMessageFromInputBox();
 	});
 
 	var autocompleteTimeout;
@@ -1703,6 +1697,17 @@ async function unblockUser(user_id) {
 	return await hchat.Twitch.unblockUser(user_id);
 }
 
+function sendMessageFromInputBox(clear = true) {
+	var text = textInput.value;
+	sendMessage(text);
+
+	if (!clear) {
+		textInput.value = "";
+		setReply();
+		closeSuggestionBox();
+	}
+}
+
 // Space followed by U+E0000
 const spamBypassMagic = " \uDB40\uDC00";
 var lastMessage = "";
@@ -2158,18 +2163,18 @@ function openSettings() {
 					d.appendChild(createElementWithText("div", "Last updated " + localStorage.getItem("lastUpdated")));
 					about.appendChild(d);
 				}
-				
+
 				{
 					var d = document.createElement("div");
 					d.classList.add("links");
 					{
-						var a  = createElementWithText("a", "Source Code");
+						var a = createElementWithText("a", "Source Code");
 						a.href = gitPage;
 						a.target = "_blank";
 						d.appendChild(a);
 					}
 					{
-						var a  = createElementWithText("a", "Report an issue");
+						var a = createElementWithText("a", "Report an issue");
 						a.href = issuesPage;
 						a.target = "_blank";
 						d.appendChild(a);
@@ -2504,8 +2509,7 @@ function suggestAutocomplete() {
 			res = it.next();
 		}
 
-		if(suggs.length)
-		{
+		if (suggs.length) {
 			suggestionBox = document.createElement("div");
 			suggestionBox.classList.add("autocomplete");
 			suggestionBox.classList.add("contextMenu");
@@ -2516,7 +2520,7 @@ function suggestAutocomplete() {
 				var c = document.createElement("div");
 
 				if (s.image) {
-					var d = document.createElement("img");
+					var img = document.createElement("img");
 					img.src = s.image;
 					c.appendChild(img);
 				}
