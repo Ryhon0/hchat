@@ -437,7 +437,7 @@ async function loaded() {
 				suggestionBox.children[suggestionIndex].click();
 			}
 			else {
-				sendMessageFromInputBox(ev.ctrlKey);
+				sendMessageFromInputBox(!ev.ctrlKey);
 			}
 			ev.preventDefault();
 		}
@@ -1701,7 +1701,7 @@ function sendMessageFromInputBox(clear = true) {
 	var text = textInput.value;
 	sendMessage(text);
 
-	if (!clear) {
+	if (clear) {
 		textInput.value = "";
 		setReply();
 		closeSuggestionBox();
