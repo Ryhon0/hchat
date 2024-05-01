@@ -84,31 +84,27 @@ class SevenTVEventAPI {
 	constructor() {
 		this.ws.onmessage = (ev) => {
 			var o = JSON.parse(ev.data);
-			if(o.op == 1)
-			{
+			if (o.op == 1) {
 				// Hello
-				if(!this.sessionId)
+				if (!this.sessionId)
 					this.sessionId = o.d.session_id;
 			}
-			else if(o.op == 4 || o.op == 7)
-			{
+			else if (o.op == 4 || o.op == 7) {
 				// Reconnect
 				this.ws.close();
 			}
-			else if(o.op == 6)
-			{
+			else if (o.op == 6) {
 				// Error
 				console.error(o);
 			}
 			// Other events
-			else if(o.op == 0)
-			{
+			else if (o.op == 0) {
 				this.onEvent(o.d);
 			}
 		};
 		this.ws.onopen = (ev) => {
-			if(this.sessionId)
-				this.sendMessage(34, {"session_id": this.sessionId});
+			if (this.sessionId)
+				this.sendMessage(34, { "session_id": this.sessionId });
 
 			for (var payload of this.pending)
 				this.sendObject(payload);
@@ -124,8 +120,7 @@ class SevenTVEventAPI {
 		else this.pending.push(payload);
 	}
 
-	sendObject(obj)
-	{
+	sendObject(obj) {
 		this.ws.send(JSON.stringify(obj));
 	}
 
@@ -133,7 +128,7 @@ class SevenTVEventAPI {
 		this.sendMessage(35, { "type": type, "condition": cond })
 	}
 
-	unsubscribe(type) {
+	unsubscribe(type, cond) {
 		this.sendMessage(36, { "type": type, "condition": cond });
 	}
 }
