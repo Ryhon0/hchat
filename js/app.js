@@ -1030,6 +1030,13 @@ function getBadgeElement(channel, pm) {
 		bi.style.background = ba.backgroundStyle;
 		bl.appendChild(bi);
 
+		let months = 0;
+		if (ba.id.startsWith("subscriber/")) {
+			var info = pm.tags["badge-info"].split(',').map(i => i.split('/')).find(i => i[0] == "subscriber");
+			if (info)
+				months = Number(info[1]);
+		}
+
 		bi.onmouseover = () => {
 			const tex = document.createElement("div");
 			tex.classList.add("emoteTooltip");
@@ -1039,9 +1046,15 @@ function getBadgeElement(channel, pm) {
 
 			tex.appendChild(timg);
 			tex.appendChild(document.createTextNode(ba.title));
-			if (ba.description && ba.description != ba.title) {
+			if (months == 0) {
+				if (ba.description && ba.description != ba.title) {
+					tex.appendChild(document.createElement("br"));
+					tex.appendChild(document.createTextNode(ba.description));
+				}
+			}
+			else {
 				tex.appendChild(document.createElement("br"));
-				tex.appendChild(document.createTextNode(ba.description));
+				tex.appendChild(document.createTextNode(months + " month" + (months == 1 ? "" : "s")));
 			}
 
 			showTooltip(bl, tex);
