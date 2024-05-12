@@ -705,7 +705,7 @@ function processMessage(pm, beforeElem = undefined) {
 					}
 				}
 
-				var username = cachedUsernames.get(timedOutUser) ?? (timedOutUser + "");
+				var username = cachedUsernames.get(timedOutUser) ?? pm.content ?? (timedOutUser + "");
 				if (pm.tags["ban-duration"]) {
 					var duration = Number(pm.tags["ban-duration"]);
 					{
