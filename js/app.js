@@ -713,7 +713,7 @@ function processMessage(pm, beforeElem = undefined) {
 						micon.appendChild(document.createTextNode(username + " has been timed out for " + durationText));
 					}
 				}
-				else micon.appendChild(document.createTextNode(username + " has been timed out"));
+				else micon.appendChild(document.createTextNode(username + " has been banned"));
 				timelinePush(channel.timeline, mi, beforeElem);
 			}
 			else {
