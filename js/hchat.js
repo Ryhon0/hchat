@@ -28,6 +28,9 @@ class EmoteInfo {
 	/** @type { boolean } */
 	overlay = false;
 
+	/** @type { Function | undefined } */
+	modifierFunction = undefined;
+
 	getName() {
 		return this.alias ?? this.name;
 	}
@@ -504,6 +507,125 @@ class HChat {
 			ee.urls = e.urls;
 			ee.name = e.name;
 			ee.provider = hchatEmoteProviderFFZ;
+			ee.overlay = !!e.modifier;
+
+			if (e.modifier_flags & 1) {
+				var maskFunctions =
+					[
+						undefined, // Skip
+						// Flip X
+						function (img) {
+							var s = document.createElement("span");
+							s.classList.add("emoteEffectFlipX");
+							s.appendChild(img);
+							return s;
+						},
+						// Flip Y
+						function (img) {
+							var s = document.createElement("span");
+							s.classList.add("emoteEffectFlipY");
+							s.appendChild(img);
+							return s;
+						},
+						// Wide
+						function (img) {
+							// TODO
+							var s = document.createElement("span");
+							s.classList.add("emoteEffectWide");
+							s.appendChild(img);
+							return s;
+						},
+						// Slide
+						function (img) {
+							var s = document.createElement("span");
+							s.classList.add("emoteEffectSlide");
+							s.appendChild(img);
+							return s;
+						},
+						// Arrive
+						function (img) {
+							var s = document.createElement("span");
+							s.classList.add("emoteEffectArrive");
+							s.appendChild(img);
+							return s;
+						},
+						// Leave
+						function (img) {
+							var s = document.createElement("span");
+							s.classList.add("emoteEffectLeave");
+							s.appendChild(img);
+							return s;
+						},
+						// Spin
+						function (img) {
+							var s = document.createElement("span");
+							s.classList.add("emoteEffectSpin");
+							s.appendChild(img);
+							return s;
+						},
+						undefined, // 256
+						undefined, // 512
+						undefined, // 1024
+						// Rainbow
+						function (img) {
+							var s = document.createElement("span");
+							s.classList.add("emoteEffectRainbow");
+							s.appendChild(img);
+							return s;
+						},
+						// Hyper red
+						function (img) {
+							var s = document.createElement("span");
+							s.classList.add("emoteEffectHyperRed");
+							s.appendChild(img);
+							return s;
+						},
+						// Hyper shake
+						function (img) {
+							var s = document.createElement("span");
+							s.classList.add("emoteEffectShake");
+							s.appendChild(img);
+							return s;
+						},
+						// Cursed
+						function (img) {
+							var s = document.createElement("span");
+							s.classList.add("emoteEffectCursed");
+							s.appendChild(img);
+							return s;
+						},
+						// Jam
+						function (img) {
+							var s = document.createElement("span");
+							s.classList.add("emoteEffectJam");
+							s.appendChild(img);
+							return s;
+						},
+						// Bounce
+						function (img) {
+							var s = document.createElement("span");
+							s.classList.add("emoteEffectBounce");
+							s.appendChild(img);
+							return s;
+						},
+					];
+
+				for (let i in maskFunctions) {
+					const func = maskFunctions[i];
+					if (func == undefined) continue;
+
+					if (e.modifier_flags & (1 << i)) {
+						if (ee.modifierFunction) {
+							const oldfunc = ee.modifierFunction;
+							ee.modifierFunction = function (img) {
+								return func(oldfunc(img));
+							}
+						}
+						else
+							ee.modifierFunction = func;
+					}
+				}
+			}
 			list.set(ee.name, ee);
 		}
 		return list;

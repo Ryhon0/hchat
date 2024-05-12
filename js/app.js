@@ -1169,7 +1169,7 @@ function createEmoteElement(c) {
 		debugger;
 	}
 
-	const img = document.createElement("img");
+	let img = document.createElement("img");
 	img.src = c.info.getImageURL(settings.emoteSize);
 	img.loading = "lazy";
 	img.alt = c.info.getName();
@@ -1177,7 +1177,6 @@ function createEmoteElement(c) {
 	const imgspan = document.createElement("span");
 	imgspan.emote = c;
 	imgspan.classList.add("emote");
-	imgspan.appendChild(img);
 
 	var overlays = c.overlays;
 
@@ -1213,13 +1212,25 @@ function createEmoteElement(c) {
 	};
 
 	for (ov of overlays) {
-		const img = document.createElement("img");
-		img.loading = "lazy";
-		img.src = ov.info.getImageURL(settings.emoteSize);
-		img.alt = c.info.getName();
-
-		imgspan.appendChild(img);
+		if(ov.info.modifierFunction)
+		{
+			img = ov.info.modifierFunction(img);
+		}
+		else
+		{
+			const oimg = document.createElement("img");
+			oimg.loading = "lazy";
+			oimg.src = ov.info.getImageURL(settings.emoteSize);
+			oimg.alt = c.info.getName();
+			
+			imgspan.appendChild(oimg);
+		}
 	}
+	
+	if(imgspan.children[0])
+		imgspan.insertBefore(img,imgspan.children[0]);
+	else
+		imgspan.appendChild(img);
 
 	return imgspan;
 }
@@ -2628,6 +2639,7 @@ function* getEmoteSuggestions(text) {
 		hchat.globalEmotes,
 		hchat.emojis]) {
 
+		if(map == undefined) return;
 		for (var u of map.values()) {
 			if (u.getName().toLowerCase().includes(text)) {
 				var sug = new AutocompleteSuggestion();
