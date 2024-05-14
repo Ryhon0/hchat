@@ -1046,15 +1046,41 @@ function getBadgeElement(channel, pm) {
 
 			tex.appendChild(timg);
 			tex.appendChild(document.createTextNode(ba.title));
-			if (months == 0) {
-				if (ba.description && ba.description != ba.title) {
-					tex.appendChild(document.createElement("br"));
-					tex.appendChild(document.createTextNode(ba.description));
+			tex.appendChild(document.createElement("br"));
+			if (ba.id == "game-developer/1") {
+				tex.appendChild(document.createTextNode("Developer for:"));
+				tex.appendChild(document.createElement("br"));
+
+				var placeholder = document.createTextNode("Loading...");
+				tex.appendChild(placeholder);
+
+				var showList = (d) => {
+					placeholder.remove();
+					for (org of d.user.publicOrganizations) {
+						tex.appendChild(document.createTextNode(org.name + " (" + org.url + ")"));
+						tex.appendChild(document.createElement("br"));
+					}
+				}
+				var uid = pm.userId();
+				if (cachedDevBadgeInfos.has(uid))
+					showList(cachedDevBadgeInfos.get(uid));
+				else {
+					new TwitchAPI().getDeveloperBadgeInfo(uid).then(d => {
+						cachedDevBadgeInfos.set(uid, d);
+						showList(d);
+					});
 				}
 			}
 			else {
-				tex.appendChild(document.createElement("br"));
-				tex.appendChild(document.createTextNode(months + " month" + (months == 1 ? "" : "s")));
+
+				if (months == 0) {
+					if (ba.description && ba.description != ba.title) {
+						tex.appendChild(document.createTextNode(ba.description));
+					}
+				}
+				else {
+					tex.appendChild(document.createTextNode(months + " month" + (months == 1 ? "" : "s")));
+				}
 			}
 
 			showTooltip(bl, tex);
@@ -1062,6 +1088,8 @@ function getBadgeElement(channel, pm) {
 	}
 	return bl;
 }
+var cachedDevBadgeInfos = new Map();
+
 
 /**
  * @param { Channel } channel 
@@ -1212,23 +1240,21 @@ function createEmoteElement(c) {
 	};
 
 	for (ov of overlays) {
-		if(ov.info.modifierFunction)
-		{
+		if (ov.info.modifierFunction) {
 			img = ov.info.modifierFunction(img);
 		}
-		else
-		{
+		else {
 			const oimg = document.createElement("img");
 			oimg.loading = "lazy";
 			oimg.src = ov.info.getImageURL(settings.emoteSize);
 			oimg.alt = c.info.getName();
-			
+
 			imgspan.appendChild(oimg);
 		}
 	}
-	
-	if(imgspan.children[0])
-		imgspan.insertBefore(img,imgspan.children[0]);
+
+	if (imgspan.children[0])
+		imgspan.insertBefore(img, imgspan.children[0]);
 	else
 		imgspan.appendChild(img);
 
@@ -2639,7 +2665,7 @@ function* getEmoteSuggestions(text) {
 		hchat.globalEmotes,
 		hchat.emojis]) {
 
-		if(map == undefined) return;
+		if (map == undefined) return;
 		for (var u of map.values()) {
 			if (u.getName().toLowerCase().includes(text)) {
 				var sug = new AutocompleteSuggestion();

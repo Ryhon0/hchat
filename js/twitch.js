@@ -157,6 +157,20 @@ class TwitchAPI {
 		await this.fetchAuthenticated(this.BaseHelixURL + "/users/blocks?target_user_id=" + user_id, {"method": "DELETE"});
 	}
 
+	async getDeveloperBadgeInfo(user_id)
+	{
+		return (await (await fetch("https://gql.twitch.tv/gql", 
+		{
+			method: "POST",
+			headers:
+			{
+				"Client-Id": "kimne78kx3ncx6brgo4mv6wki5h1ko",
+				"Content-Type": "application/json"
+			},
+			body: "[{\"operationName\": \"DeveloperBadgeDescription\",\"variables\": {\"userID\": \""+user_id+"\"},\"extensions\": {\"persistedQuery\": {\"version\": 1,\"sha256Hash\": \"90b32a0c7923871132a4ae6cbea9410d0732fc5975d5f390c70699a86565104c\"}}}]"
+		})).json())[0].data
+	}
+
 	async putJSONAuthenticated(url, opts = { timeout: 5000 }) {
 		return await this.getJSONAuthenticated(url, { ...opts, ...{"method": "PUT"} });
 	}
