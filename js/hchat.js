@@ -250,7 +250,7 @@ class HChat {
 				var s = l.split(' ');
 				var t1 = s[0];
 				var t2 = s[1];
-				t2 = t2.substring(1, t2.length - 2);
+				t2 = t2.substring(1, t2.length - 1);
 
 				if (t1 == "zip" || t1 == "mov") continue;
 
