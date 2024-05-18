@@ -31,6 +31,8 @@ class EmoteInfo {
 	/** @type { Function | undefined } */
 	modifierFunction = undefined;
 
+	widthRatio = 1;
+
 	getName() {
 		return this.alias ?? this.name;
 	}
@@ -463,6 +465,9 @@ class HChat {
 		ee.alias = e.name;
 		ee.provider = hchatEmoteProviderSevenTV;
 		ee.overlay = (e.flags & 1) != 0;
+		var w = e.data.host.files[0].width;
+		var h = e.data.host.files[0].height;
+		ee.widthRatio = w / h;
 
 		return ee;
 	}
@@ -508,6 +513,7 @@ class HChat {
 			ee.name = e.name;
 			ee.provider = hchatEmoteProviderFFZ;
 			ee.overlay = !!e.modifier;
+			ee.widthRatio = e.width / e.height;
 
 			if (e.modifier_flags & 1) {
 				var maskFunctions =
@@ -515,98 +521,74 @@ class HChat {
 						undefined, // Skip
 						// Flip X
 						function (img) {
-							var s = document.createElement("span");
-							s.classList.add("emoteEffectFlipX");
-							s.appendChild(img);
-							return s;
+							img.classList.add("emoteEffectFlipX");
+							return img;
 						},
 						// Flip Y
 						function (img) {
-							var s = document.createElement("span");
-							s.classList.add("emoteEffectFlipY");
-							s.appendChild(img);
-							return s;
+							img.classList.add("emoteEffectFlipY");
+							return img;
 						},
 						// Wide
 						function (img) {
 							// TODO
-							var s = document.createElement("span");
-							s.classList.add("emoteEffectWide");
-							s.appendChild(img);
-							return s;
+							img.classList.add("emoteEffectWide");
+							return img;
 						},
 						// Slide
 						function (img) {
-							var s = document.createElement("span");
-							s.classList.add("emoteEffectSlide");
-							s.appendChild(img);
-							return s;
+							img.style.backgroundImage = "url(" + img.src + ")";
+							img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+							img.classList.add("emoteEffectSlide");
+							return img;
 						},
 						// Arrive
 						function (img) {
-							var s = document.createElement("span");
-							s.classList.add("emoteEffectArrive");
-							s.appendChild(img);
-							return s;
+							img.classList.add("emoteEffectArrive");
+							return img;
 						},
 						// Leave
 						function (img) {
-							var s = document.createElement("span");
-							s.classList.add("emoteEffectLeave");
-							s.appendChild(img);
-							return s;
+							img.classList.add("emoteEffectLeave");
+							return img;
 						},
 						// Spin
 						function (img) {
-							var s = document.createElement("span");
-							s.classList.add("emoteEffectSpin");
-							s.appendChild(img);
-							return s;
+							img.classList.add("emoteEffectSpin");
+							return img;
 						},
 						undefined, // 256
 						undefined, // 512
 						undefined, // 1024
 						// Rainbow
 						function (img) {
-							var s = document.createElement("span");
-							s.classList.add("emoteEffectRainbow");
-							s.appendChild(img);
-							return s;
+							img.classList.add("emoteEffectRainbow");
+							return img;
 						},
 						// Hyper red
 						function (img) {
-							var s = document.createElement("span");
-							s.classList.add("emoteEffectHyperRed");
-							s.appendChild(img);
-							return s;
+							img.classList.add("emoteEffectHyperRed");
+							return img;
 						},
 						// Hyper shake
 						function (img) {
-							var s = document.createElement("span");
-							s.classList.add("emoteEffectShake");
-							s.appendChild(img);
-							return s;
+							img.classList.add("emoteEffectShake");
+							return img;
 						},
 						// Cursed
 						function (img) {
-							var s = document.createElement("span");
-							s.classList.add("emoteEffectCursed");
-							s.appendChild(img);
-							return s;
+							img.classList.add("emoteEffectCursed");
+							return img;
 						},
 						// Jam
 						function (img) {
-							var s = document.createElement("span");
-							s.classList.add("emoteEffectJam");
-							s.appendChild(img);
-							return s;
+							img.classList.add("emoteEffectJam");
+							return img;
 						},
 						// Bounce
 						function (img) {
-							var s = document.createElement("span");
-							s.classList.add("emoteEffectBounce");
-							s.appendChild(img);
-							return s;
+							img.classList.add("emoteEffectBounce");
+							return img;
 						},
 					];
 

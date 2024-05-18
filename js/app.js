@@ -325,9 +325,7 @@ async function loaded() {
 			e.info = ei;
 
 			var ee = createEmoteElement(e);
-			ee.onclick = (ev) => {
-				pushInputText(ev.currentTarget.emote.info.getName());
-			}
+			ee.addEventListener("click", (ev) => { pushInputText(ev.currentTarget.emote.info.getName()); });
 			page.appendChild(ee);
 		}
 		filterEmotes(emoteSearch.value);
@@ -556,7 +554,7 @@ function processMessage(pm, beforeElem = undefined) {
 		mi.classList.add("blocked");
 	}
 
-	mi.oncontextmenu = (ev) => {
+	mi.addEventListener("contextmenu", (ev) => {
 		var menu = document.createElement("div");
 		menu.classList.add("messageMenu");
 		document.body.appendChild(menu);
@@ -638,7 +636,7 @@ function processMessage(pm, beforeElem = undefined) {
 		var zoom = document.body.style.zoom;
 		showTooltip([ev.clientX / zoom, ev.clientY / zoom], menu, true);
 		ev.preventDefault();
-	}
+	});
 
 	// Timestamp
 	{
@@ -1197,18 +1195,13 @@ function createEmoteElement(c) {
 		debugger;
 	}
 
-	let img = document.createElement("img");
-	img.src = c.info.getImageURL(settings.emoteSize);
-	img.loading = "lazy";
-	img.alt = c.info.getName();
-
 	const imgspan = document.createElement("span");
 	imgspan.emote = c;
 	imgspan.classList.add("emote");
 
 	var overlays = c.overlays;
 
-	imgspan.onmouseover = (ev) => {
+	imgspan.addEventListener("mouseover", (ev) => {
 		const c = ev.currentTarget.emote;
 		const info = c.info;
 		const overlays = c.overlays;
@@ -1237,26 +1230,30 @@ function createEmoteElement(c) {
 		}
 
 		showTooltip(imgspan, tex);
-	};
+	});
 
+	let img = document.createElement("img");
+	img.src = c.info.getImageURL(settings.emoteSize);
+	img.loading = "lazy";
+	img.alt = c.info.getName();
+	img.style.setProperty("--emoteWidth", c.info.widthRatio + "em");
+	imgspan.appendChild(img);
+
+	var modimg = img;
 	for (ov of overlays) {
 		if (ov.info.modifierFunction) {
-			img = ov.info.modifierFunction(img);
+			modimg = ov.info.modifierFunction(modimg);
+			modimg.alt += " " + ov.info.getName();
 		}
 		else {
 			const oimg = document.createElement("img");
 			oimg.loading = "lazy";
 			oimg.src = ov.info.getImageURL(settings.emoteSize);
 			oimg.alt = c.info.getName();
-
 			imgspan.appendChild(oimg);
+			modimg = oimg;
 		}
 	}
-
-	if (imgspan.children[0])
-		imgspan.insertBefore(img, imgspan.children[0]);
-	else
-		imgspan.appendChild(img);
 
 	return imgspan;
 }
@@ -1604,12 +1601,10 @@ async function openChannelTab(name, id = undefined) {
 				for (var m of msg.messages) {
 					processMessage(parseMessage(m), stopper);
 				}
-				// stopper.scrollIntoView();
 				stopper.remove();
 			}
 			else {
 				stopper.innerText = "Failed to load message history" + msg.erorr_code + " - " + msg.erorr;
-				// stopper.scrollIntoView();
 			}
 		});
 	});
@@ -2465,7 +2460,7 @@ class Tabber {
 		}
 
 		if (page.tab) {
-			page.tab.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			page.tab.scrollIntoView();
 		}
 	}
 }
@@ -2601,7 +2596,7 @@ function suggestAutocomplete() {
 
 				c.appendChild(document.createTextNode(s.text));
 
-				c.onclick = () => { suggestionPush(s.text); };
+				c.addEventListener("click", () => { suggestionPush(s.text); });
 				suggestionBox.appendChild(c);
 			}
 

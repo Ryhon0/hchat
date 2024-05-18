@@ -321,20 +321,16 @@ button {
 	vertical-align: bottom;
 	justify-items: center;
 	font-size: 1.5em;
-	min-width: 1em;
-	height: 1em;
+	width: auto;
+	height: auto;
 	overflow: hidden;
 }
 
 .emote img {
 	height: 1em;
+	width: var(--emoteWidth);
 	grid-column: 1;
 	grid-row: 1;
-}
-
-.emote .emoteTooltip {
-	font-size: 1rem;
-	user-select: none;
 }
 
 .gradient {
