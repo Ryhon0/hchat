@@ -1006,6 +1006,9 @@ function playMentionSound() {
 	a.src = "/assets/sounds/notification/waterdrop.ogg";
 	a.autoplay = true;
 	a.style.display = "none";
+	a.addEventListener("ended", () => a.remove());
+	a.addEventListener("error", () => a.remove());
+	a.addEventListener("abort", () => a.remove());
 	document.body.appendChild(a);
 }
 
