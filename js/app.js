@@ -534,7 +534,8 @@ function processMessage(pm, beforeElem = undefined) {
 
 	var channel = getChannelById(pm.roomId());
 	if (isNaN(pm.roomId())) {
-		channel = channels.find(c => c.name.toLowerCase() == pm.command.channel.substring(1));
+		if(pm.command.channel)
+			channel = channels.find(c => c.name.toLowerCase() == pm.command.channel.substring(1));
 		if(!channel)
 			channel = selectedChannel;
 	}
