@@ -534,14 +534,9 @@ function processMessage(pm, beforeElem = undefined) {
 
 	var channel = getChannelById(pm.roomId());
 	if (isNaN(pm.roomId())) {
-		channel = selectedChannel;
-	}
-	else {
-		if (!channel) {
-			console.error("Recieved message in channel " + pm.roomId() + ", but no chat with this name was opened");
-			console.log(pm);
-			return;
-		}
+		channel = channels.find(c => c.name.toLowerCase() == pm.command.channel.substring(1));
+		if(!channel)
+			channel = selectedChannel;
 	}
 
 	var mi = document.createElement("div");
@@ -2640,7 +2635,7 @@ function suggestionPush(text) {
 	var pre = "";
 
 	var idx = textInput.value.lastIndexOf(' ', textInput.selectionStart - 1);
-	if (idx != -1) pre = textInput.value.slice(0, idx+1);
+	if (idx != -1) pre = textInput.value.slice(0, idx + 1);
 
 	var post = textInput.value.slice(textInput.selectionStart, textInput.value.length);
 
