@@ -2635,13 +2635,13 @@ function moveSelectionCursor(by) {
 function suggestionPush(text) {
 	var pre = "";
 
-	var idx = textInput.value.lastIndexOf(' ', textInput.selectionStart);
-	if (idx != -1) pre = textInput.value.slice(0, idx + 1);
+	var idx = textInput.value.lastIndexOf(' ', textInput.selectionStart - 1);
+	if (idx != -1) pre = textInput.value.slice(0, idx+1);
 
 	var post = textInput.value.slice(textInput.selectionStart, textInput.value.length);
 
 	textInput.value = pre + text + " " + post;
-	textInput.selectionStart = pre.length + text.length + 1;
+	textInput.selectionEnd = textInput.selectionStart = pre.length + text.length + 1;
 	textInput.focus();
 
 	closeSuggestionBox();
