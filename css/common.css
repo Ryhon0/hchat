@@ -1,214 +1,214 @@
 @keyframes emoteEffectArrive {
     0% {
-        --effectAnimation: translateX(-18px) scale(0);
+        transform: var(--effectMirror) translateX(-18px) scale(0);
     }
 
     19.99% {
-        --effectAnimation: translateX(-18px) scale(0);
+        transform: var(--effectMirror) translateX(-18px) scale(0);
     }
 
     20% {
-        --effectAnimation: translateX(-18px) scale(0.1);
+        transform: var(--effectMirror) translateX(-18px) scale(0.1);
     }
 
     25% {
-        --effectAnimation: translateX(-16px) scale(0.2) translateY(0.6px);
+        transform: var(--effectMirror) translateX(-16px) scale(0.2) translateY(0.6px);
     }
 
     30% {
-        --effectAnimation: translateX(-14px) scale(0.3) translateY(-4px);
+        transform: var(--effectMirror) translateX(-14px) scale(0.3) translateY(-4px);
     }
 
     35% {
-        --effectAnimation: translateX(-12px) scale(0.4) translateY(0.6px);
+        transform: var(--effectMirror) translateX(-12px) scale(0.4) translateY(0.6px);
     }
 
     40% {
-        --effectAnimation: translateX(-10px) scale(0.5) translateY(-4px);
+        transform: var(--effectMirror) translateX(-10px) scale(0.5) translateY(-4px);
     }
 
     45% {
-        --effectAnimation: translateX(-8px) scale(0.6) translateY(2px);
+        transform: var(--effectMirror) translateX(-8px) scale(0.6) translateY(2px);
     }
 
     50% {
-        --effectAnimation: translateX(-6px) scale(0.7) translateY(-3px);
+        transform: var(--effectMirror) translateX(-6px) scale(0.7) translateY(-3px);
     }
 
     55% {
-        --effectAnimation: translateX(-4px) scale(0.8) translateY(2px);
+        transform: var(--effectMirror) translateX(-4px) scale(0.8) translateY(2px);
     }
 
     60% {
-        --effectAnimation: translateX(-2px) scale(0.9) translateY(-3px);
+        transform: var(--effectMirror) translateX(-2px) scale(0.9) translateY(-3px);
     }
 
     65% {
-        --effectAnimation: scale(1);
+        transform: var(--effectMirror) scale(1);
     }
 
     100% {
-        --effectAnimation: scale(1);
+        transform: var(--effectMirror) scale(1);
     }
 }
 
 @keyframes emoteEffectLeave {
     0% {
-        --effectAnimation: scale(1);
+        transform: var(--effectMirror) scale(1);
     }
 
     5% {
-        --effectAnimation: scale(0.9, 0.9) translateY(-3px);
+        transform: var(--effectMirror) scale(0.9, 0.9) translateY(-3px);
     }
 
     15% {
-        --effectAnimation: translateX(-2px) scale(0.8, 0.8) translateY(2px);
+        transform: var(--effectMirror) translateX(-2px) scale(0.8, 0.8) translateY(2px);
     }
 
     20% {
-        --effectAnimation: translateX(-4px) scale(0.7, 0.7) translateY(-3px);
+        transform: var(--effectMirror) translateX(-4px) scale(0.7, 0.7) translateY(-3px);
     }
 
     25% {
-        --effectAnimation: translateX(-6px) scale(0.6, 0.6) translateY(2px);
+        transform: var(--effectMirror) translateX(-6px) scale(0.6, 0.6) translateY(2px);
     }
 
     30% {
-        --effectAnimation: translateX(-8px) scale(0.5, 0.5) translateY(-4px);
+        transform: var(--effectMirror) translateX(-8px) scale(0.5, 0.5) translateY(-4px);
     }
 
     35% {
-        --effectAnimation: translateX(-10px) scale(0.4, 0.4) translateY(0.6px);
+        transform: var(--effectMirror) translateX(-10px) scale(0.4, 0.4) translateY(0.6px);
     }
 
     45% {
-        --effectAnimation: translateX(-12px) scale(0.3, 0.3) translateY(-4px);
+        transform: var(--effectMirror) translateX(-12px) scale(0.3, 0.3) translateY(-4px);
     }
 
     50% {
-        --effectAnimation: translateX(-14px) scale(0.2, 0.2) translateY(0.6px);
+        transform: var(--effectMirror) translateX(-14px) scale(0.2, 0.2) translateY(0.6px);
     }
 
     55% {
-        --effectAnimation: translateX(-16px) scale(0.1, 0.1);
+        transform: var(--effectMirror) translateX(-16px) scale(0.1, 0.1);
     }
 
     60% {
-        --effectAnimation: translateX(-18px) scale(0.01, 0);
+        transform: var(--effectMirror) translateX(-18px) scale(0.01, 0);
     }
 
     65% {
-        --effectAnimation: translateX(-18px) scale(0, 0);
+        transform: var(--effectMirror) translateX(-18px) scale(0, 0);
     }
 
     100% {
-        --effectAnimation: translateX(-18px) scale(0, 0);
+        transform: var(--effectMirror) translateX(-18px) scale(0, 0);
     }
 }
 
 @keyframes emoteEffectInOut {
     0% {
-        --effectAnimation: translateX(-18px) scale(0);
+        transform: var(--effectMirror) translateX(-18px) scale(0);
     }
 
     9.995% {
-        --effectAnimation: translateX(-18px) scale(0);
+        transform: var(--effectMirror) translateX(-18px) scale(0);
     }
 
     10% {
-        --effectAnimation: translateX(-18px) scale(0.1);
+        transform: var(--effectMirror) translateX(-18px) scale(0.1);
     }
 
     12.5% {
-        --effectAnimation: translateX(-16px) scale(0.2) translateY(0.6px);
+        transform: var(--effectMirror) translateX(-16px) scale(0.2) translateY(0.6px);
     }
 
     15% {
-        --effectAnimation: translateX(-14px) scale(0.3) translateY(-4px);
+        transform: var(--effectMirror) translateX(-14px) scale(0.3) translateY(-4px);
     }
 
     17.5% {
-        --effectAnimation: translateX(-12px) scale(0.4) translateY(0.6px);
+        transform: var(--effectMirror) translateX(-12px) scale(0.4) translateY(0.6px);
     }
 
     20% {
-        --effectAnimation: translateX(-10px) scale(0.5) translateY(-4px);
+        transform: var(--effectMirror) translateX(-10px) scale(0.5) translateY(-4px);
     }
 
     22.5% {
-        --effectAnimation: translateX(-8px) scale(0.6) translateY(2px);
+        transform: var(--effectMirror) translateX(-8px) scale(0.6) translateY(2px);
     }
 
     25% {
-        --effectAnimation: translateX(-6px) scale(0.7) translateY(-3px);
+        transform: var(--effectMirror) translateX(-6px) scale(0.7) translateY(-3px);
     }
 
     27.5% {
-        --effectAnimation: translateX(-4px) scale(0.8) translateY(2px);
+        transform: var(--effectMirror) translateX(-4px) scale(0.8) translateY(2px);
     }
 
     30% {
-        --effectAnimation: translateX(-2px) scale(0.9) translateY(-3px);
+        transform: var(--effectMirror) translateX(-2px) scale(0.9) translateY(-3px);
     }
 
     32.5% {
-        --effectAnimation: scale(1);
+        transform: var(--effectMirror) scale(1);
     }
 
     50% {
-        --effectAnimation: scale(1);
+        transform: var(--effectMirror) scale(1);
     }
 
     50% {
-        --effectAnimation: scale(1);
+        transform: var(--effectMirror) scale(1);
     }
 
     69.995% {
-        --effectAnimation: scale(1);
+        transform: var(--effectMirror) scale(1);
     }
 
     70% {
-        --effectAnimation: scale(-0.9, 0.9) translateY(-3px);
+        transform: var(--effectMirror) scale(-0.9, 0.9) translateY(-3px);
     }
 
     72.5% {
-        --effectAnimation: translateX(-2px) scale(-0.8, 0.8) translateY(2px);
+        transform: var(--effectMirror) translateX(-2px) scale(-0.8, 0.8) translateY(2px);
     }
 
     75% {
-        --effectAnimation: translateX(-4px) scale(-0.7, 0.7) translateY(-3px);
+        transform: var(--effectMirror) translateX(-4px) scale(-0.7, 0.7) translateY(-3px);
     }
 
     77.5% {
-        --effectAnimation: translateX(-6px) scale(-0.6, 0.6) translateY(2px);
+        transform: var(--effectMirror) translateX(-6px) scale(-0.6, 0.6) translateY(2px);
     }
 
     80% {
-        --effectAnimation: translateX(-8px) scale(-0.5, 0.5) translateY(-4px);
+        transform: var(--effectMirror) translateX(-8px) scale(-0.5, 0.5) translateY(-4px);
     }
 
     82.5% {
-        --effectAnimation: translateX(-10px) scale(-0.4, 0.4) translateY(0.6px);
+        transform: var(--effectMirror) translateX(-10px) scale(-0.4, 0.4) translateY(0.6px);
     }
 
     85% {
-        --effectAnimation: translateX(-12px) scale(-0.3, 0.3) translateY(-4px);
+        transform: var(--effectMirror) translateX(-12px) scale(-0.3, 0.3) translateY(-4px);
     }
 
     87.5% {
-        --effectAnimation: translateX(-14px) scale(-0.2, 0.2) translateY(0.6px);
+        transform: var(--effectMirror) translateX(-14px) scale(-0.2, 0.2) translateY(0.6px);
     }
 
     90% {
-        --effectAnimation: translateX(-16px) scale(-0.1, 0.1);
+        transform: var(--effectMirror) translateX(-16px) scale(-0.1, 0.1);
     }
 
     92.5% {
-        --effectAnimation: translateX(-18px) scale(-0.01, 0);
+        transform: var(--effectMirror) translateX(-18px) scale(-0.01, 0);
     }
 
     100% {
-        --effectAnimation: translateX(-18px) scale(0, 0);
+        transform: var(--effectMirror) translateX(-18px) scale(0, 0);
     }
 }
 
@@ -224,155 +224,155 @@
 
 @keyframes emoteEffectShake {
     0% {
-        --effectAnimation: translate(1px, 1px);
+        transform: var(--effectMirror) translate(1px, 1px);
     }
 
     10% {
-        --effectAnimation: translate(-1px, -2px);
+        transform: var(--effectMirror) translate(-1px, -2px);
     }
 
     20% {
-        --effectAnimation: translate(-3px, 0px);
+        transform: var(--effectMirror) translate(-3px, 0px);
     }
 
     30% {
-        --effectAnimation: translate(3px, 2px);
+        transform: var(--effectMirror) translate(3px, 2px);
     }
 
     40% {
-        --effectAnimation: translate(1px, -1px);
+        transform: var(--effectMirror) translate(1px, -1px);
     }
 
     50% {
-        --effectAnimation: translate(-1px, 2px);
+        transform: var(--effectMirror) translate(-1px, 2px);
     }
 
     60% {
-        --effectAnimation: translate(-3px, 1px);
+        transform: var(--effectMirror) translate(-3px, 1px);
     }
 
     70% {
-        --effectAnimation: translate(3px, 1px);
+        transform: var(--effectMirror) translate(3px, 1px);
     }
 
     80% {
-        --effectAnimation: translate(-1px, -1px);
+        transform: var(--effectMirror) translate(-1px, -1px);
     }
 
     90% {
-        --effectAnimation: translate(1px, 2px);
+        transform: var(--effectMirror) translate(1px, 2px);
     }
 
     100% {
-        --effectAnimation: translate(1px, -2px);
+        transform: var(--effectMirror) translate(1px, -2px);
     }
 }
 
 @keyframes emoteEffectJam {
     0% {
-        --effectAnimation: translate(-2px, -2px) rotate(-6deg);
+        transform: var(--effectMirror) translate(-2px, -2px) rotate(-6deg);
     }
 
     10% {
-        --effectAnimation: translate(-1.5px, -2px) rotate(-8deg);
+        transform: var(--effectMirror) translate(-1.5px, -2px) rotate(-8deg);
     }
 
     20% {
-        --effectAnimation: translate(1px, -1.5px) rotate(-8deg);
+        transform: var(--effectMirror) translate(1px, -1.5px) rotate(-8deg);
     }
 
     30% {
-        --effectAnimation: translate(3px, 2.5px) rotate(-6deg);
+        transform: var(--effectMirror) translate(3px, 2.5px) rotate(-6deg);
     }
 
     40% {
-        --effectAnimation: translate(3px, 4px) rotate(-2deg);
+        transform: var(--effectMirror) translate(3px, 4px) rotate(-2deg);
     }
 
     50% {
-        --effectAnimation: translate(2px, 4px) rotate(3deg);
+        transform: var(--effectMirror) translate(2px, 4px) rotate(3deg);
     }
 
     60% {
-        --effectAnimation: translate(1px, 4px) rotate(3deg);
+        transform: var(--effectMirror) translate(1px, 4px) rotate(3deg);
     }
 
     70% {
-        --effectAnimation: translate(-0.5px, 3px) rotate(2deg);
+        transform: var(--effectMirror) translate(-0.5px, 3px) rotate(2deg);
     }
 
     80% {
-        --effectAnimation: translate(-1.25px, 1px) rotate(0deg);
+        transform: var(--effectMirror) translate(-1.25px, 1px) rotate(0deg);
     }
 
     90% {
-        --effectAnimation: translate(-1.75px, -0.5px) rotate(-2deg);
+        transform: var(--effectMirror) translate(-1.75px, -0.5px) rotate(-2deg);
     }
 
     100% {
-        --effectAnimation: translate(-2px, -2px) rotate(-5deg);
+        transform: var(--effectMirror) translate(-2px, -2px) rotate(-5deg);
     }
 }
 
 @keyframes emoteEffectBounce {
     0% {
-        --effectAnimation: scale(0.8, 1);
+        transform: var(--effectMirror) scale(0.8, 1);
     }
 
     10% {
-        --effectAnimation: scale(0.9, 0.8);
+        transform: var(--effectMirror) scale(0.9, 0.8);
     }
 
     20% {
-        --effectAnimation: scale(1, 0.4);
+        transform: var(--effectMirror) scale(1, 0.4);
     }
 
     25% {
-        --effectAnimation: scale(1.2, 0.3);
+        transform: var(--effectMirror) scale(1.2, 0.3);
     }
 
     25.001% {
-        --effectAnimation: scale(-1.2, 0.3);
+        transform: var(--effectMirror) scale(-1.2, 0.3);
     }
 
     30% {
-        --effectAnimation: scale(-1, 0.4);
+        transform: var(--effectMirror) scale(-1, 0.4);
     }
 
     40% {
-        --effectAnimation: scale(-0.9, 0.8);
+        transform: var(--effectMirror) scale(-0.9, 0.8);
     }
 
     50% {
-        --effectAnimation: scale(-0.8, 1);
+        transform: var(--effectMirror) scale(-0.8, 1);
     }
 
     60% {
-        --effectAnimation: scale(-0.9, 0.8);
+        transform: var(--effectMirror) scale(-0.9, 0.8);
     }
 
     70% {
-        --effectAnimation: scale(-1, 0.4);
+        transform: var(--effectMirror) scale(-1, 0.4);
     }
 
     75% {
-        --effectAnimation: scale(-1.2, 0.3);
+        transform: var(--effectMirror) scale(-1.2, 0.3);
     }
 
     75.001% {
-        --effectAnimation: scale(1.2, 0.3);
+        transform: var(--effectMirror) scale(1.2, 0.3);
     }
 
     80% {
-        --effectAnimation: scale(1, 0.4);
+        transform: var(--effectMirror) scale(1, 0.4);
     }
 
     90% {
-        --effectAnimation: scale(0.9, 0.8);
+        transform: var(--effectMirror) scale(0.9, 0.8);
     }
 
     100% {
-        --effectAnimation: scale(0.8, 1);
+        transform: var(--effectMirror) scale(0.8, 1);
     }
 }
 
@@ -384,6 +384,16 @@
 
     100% {
         background-position-x: calc(-2 * var(--emoteWidth));
+    }
+}
+
+@keyframes emoteEffectSpin {
+    0% {
+        transform: var(--effectMirror) rotate(0deg);
+    }
+
+    100% {
+        transform: var(--effectMirror) rotate(360deg);
     }
 }
 
@@ -420,7 +430,7 @@
 }
 
 .emoteEffectSpin {
-    animation: emoteEffectRotate 1.5s infinite linear;
+    animation: emoteEffectSpin 1.5s infinite linear;
 }
 
 .emoteEffectLeave {
@@ -447,7 +457,7 @@
 :root
 {
     --effectMirror: scale(1);
-    --effectAnimation: scale(1);
+    transform: var(--effectMirror) scale(1);
 }
 
 .emote, .emote > img
