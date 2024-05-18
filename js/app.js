@@ -1784,6 +1784,7 @@ var lastMessage = "";
  * @param { String } msg 
  */
 function sendMessage(msg) {
+	msg = msg.replace(/\s\s+/g, ' ');
 	if (msg == lastMessage)
 		msg += spamBypassMagic;
 
