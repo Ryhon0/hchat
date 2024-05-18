@@ -456,8 +456,8 @@
 
 :root
 {
+    --effectAnimation: scale(1);
     --effectMirror: scale(1);
-    transform: var(--effectMirror) scale(1);
 }
 
 .emote, .emote > img
