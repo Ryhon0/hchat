@@ -534,9 +534,9 @@ function processMessage(pm, beforeElem = undefined) {
 
 	var channel = getChannelById(pm.roomId());
 	if (isNaN(pm.roomId())) {
-		if(pm.command.channel)
+		if (pm.command.channel)
 			channel = channels.find(c => c.name.toLowerCase() == pm.command.channel.substring(1));
-		if(!channel)
+		if (!channel)
 			channel = selectedChannel;
 	}
 
@@ -1188,7 +1188,7 @@ function getFullMessageElement(channel, pm, mentionCb = undefined) {
  * @param { Emote } e 
  */
 function createEmoteElement(c) {
-	var info = c.info;
+	const info = c.info;
 
 	if (info instanceof Function) {
 		debugger;
@@ -1231,24 +1231,37 @@ function createEmoteElement(c) {
 		showTooltip(imgspan, tex);
 	});
 
-	let img = document.createElement("img");
+	const img = document.createElement("img");
 	img.src = c.info.getImageURL(settings.emoteSize);
 	img.loading = "lazy";
 	img.alt = c.info.getName();
 	img.style.setProperty("--emoteWidth", c.info.widthRatio + "em");
+	img.addEventListener("load", () => {
+		if (c.info.widthRatio == 1) {
+			c.info.widthRatio = img.naturalWidth / img.naturalHeight;
+			img.style.setProperty("--emoteWidth", c.info.widthRatio + "em");
+		}
+	}, { once: true });
 	imgspan.appendChild(img);
 
 	var modimg = img;
 	for (ov of overlays) {
 		if (ov.info.modifierFunction) {
 			modimg = ov.info.modifierFunction(modimg);
-			modimg.alt += " " + ov.info.getName();
+			img.alt += " " + ov.info.getName();
 		}
 		else {
 			const oimg = document.createElement("img");
 			oimg.loading = "lazy";
 			oimg.src = ov.info.getImageURL(settings.emoteSize);
-			oimg.alt = c.info.getName();
+			img.alt += ov.info.getName();
+			oimg.style.setProperty("--emoteWidth", ov.info.widthRatio + "em");
+			oimg.addEventListener("load", () => {
+				if (ov.info.widthRatio == 1) {
+					ov.info.widthRatio = oimg.naturalWidth / oimg.naturalHeight;
+					oimg.style.setProperty("--emoteWidth", ov.info.widthRatio + "em");
+				}
+			}, { once: true });
 			imgspan.appendChild(oimg);
 			modimg = oimg;
 		}

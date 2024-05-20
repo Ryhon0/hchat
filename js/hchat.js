@@ -531,15 +531,17 @@ class HChat {
 						},
 						// Wide
 						function (img) {
-							// TODO
 							img.classList.add("emoteEffectWide");
 							return img;
 						},
 						// Slide
 						function (img) {
-							img.style.backgroundImage = "url(" + img.src + ")";
-							img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-							img.classList.add("emoteEffectSlide");
+							img.addEventListener("load", () => {
+								const emptyImg = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+								img.style.backgroundImage = "url(" + img.src + ")";
+								img.src = emptyImg;
+								img.classList.add("emoteEffectSlide");
+							}, { once: true });
 							return img;
 						},
 						// Arrive
