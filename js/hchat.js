@@ -122,6 +122,7 @@ class Badge {
 
 class HChat {
 	twitchEmoteOverrides = new Map();
+	twitchBadgeOverrides = new Map();
 
 	globalEmotes = new Map()
 	uniToEmoji = new Map()
@@ -219,7 +220,7 @@ class HChat {
 
 		// Twitch badge handling
 		{
-			this.globalTwitchBadges = parseTwitchBadges(twitchBadges);
+			this.globalTwitchBadges = parseTwitchBadges(twitchBadges, this.twitchBadgeOverrides);
 
 			/**
 			 * @param { Badge[] } list 

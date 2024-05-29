@@ -204,7 +204,7 @@ class TwitchAPI {
 	}
 }
 
-function parseTwitchBadges(badges) {
+function parseTwitchBadges(badges, overrides = new Map()) {
 	var list = new Map();
 	for (b of badges) {
 		for (v of b.versions) {
@@ -212,7 +212,7 @@ function parseTwitchBadges(badges) {
 			var vo = new Badge();
 			vo.title = v.title;
 			vo.id = id;
-			vo.img = v.image_url_4x;
+			vo.img = overrides.get(id) ?? v.image_url_4x;
 			vo.description = v.description;
 			vo.provider = "twitch";
 			list.set(id, vo);

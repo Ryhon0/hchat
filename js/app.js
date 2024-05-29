@@ -497,6 +497,8 @@ async function loaded() {
 				3: "/assets/emotes/twitch/PogChamp/3.png",
 			});
 	}
+	hchat.twitchBadgeOverrides.set("minecraft-15th-anniversary-celebration/1",
+		"/assets/badges/twitch/minecraft/4.png");
 
 	hchat.Twitch.clientID = clientID;
 	await hchat.init();
