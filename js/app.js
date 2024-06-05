@@ -141,19 +141,28 @@ async function loaded() {
 				t.clientID = clientID;
 				t.token = acc.token;
 
-				t.validateToken().then(async (r) => {
-					if (r.login) {
-						t.getThisUser().then((u) => {
-							acc.name = u.display_name;
-							acc.avatarUrl = u.profile_image_url;
-							saveAccounts();
+				t.validateToken().then(
+					async (r, e) => {
+						console.log(r);
+						if (r.login) {
+							t.getThisUser().then((u) => {
+								acc.name = u.display_name;
+								acc.avatarUrl = u.profile_image_url;
+								saveAccounts();
+							});
+
+							acc.state = AccountStateReady;
+							onAccountReady(acc);
+						}
+						else 
+						{
+							console.error("Session token for " + acc.name + " invalid or expired!");
+							acc.state = AccountStateExpired;
+							if(acc == activeAccount)
+								onAccountChanged();
+						}
 						});
 
-						t.state = AccountStateReady;
-						onAccountReady(acc);
-					}
-					else t.state = AccountStateExpired;
-				});
 			}
 		}
 	}
