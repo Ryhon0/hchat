@@ -529,8 +529,14 @@ input:placeholder-shown {
 	width: 100%;
 
 	background-color: #222222;
+	color: white;
 	border: none;
 	border-radius: 0.25em;
+}
+
+.settings .blocklist option {
+	background-color: transparent;
+	color: white;
 }
 
 .settings .blocklist option:checked {
@@ -603,4 +609,10 @@ input:placeholder-shown {
 
 .about .icon{
 	height: 8em;
+}
+
+select, option
+{
+	color: black;
+	background-color:  white;
 }

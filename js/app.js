@@ -154,14 +154,13 @@ async function loaded() {
 							acc.state = AccountStateReady;
 							onAccountReady(acc);
 						}
-						else 
-						{
+						else {
 							console.error("Session token for " + acc.name + " invalid or expired!");
 							acc.state = AccountStateExpired;
-							if(acc == activeAccount)
+							if (acc == activeAccount)
 								onAccountChanged();
 						}
-						});
+					});
 
 			}
 		}
@@ -2290,6 +2289,24 @@ function openSettings() {
 			settingsContent.appendChild(createElementWithText("h2", "Emotes"));
 			settingsContent.appendChild(createElementWithText("div", "These settings will require an app restart"));
 			createNumberInput("settings.emoteSize", "Emote resolution", "The maximum vertical emote resolution multiplier", 1, 4);
+			settingsContent.appendChild(createElementWithText("h3", "Emoji set"));
+			{
+				var emojiSetSelect = document.createElement("select");
+				settingsContent.appendChild(emojiSetSelect);
+				for(var set of ["twemoji","google","apple","facebook","blob"])
+				{
+					var opt = document.createElement('option');
+					opt.value = set;
+					opt.innerHTML = set[0].toUpperCase() + set.substring(1);
+					emojiSetSelect.appendChild(opt);
+				}
+				emojiSetSelect.value = settings.emojiSet;
+
+				emojiSetSelect.onchange = () => {
+					settings.emojiSet = emojiSetSelect.value;
+					saveSettings();
+				}
+			}
 			createCheckbox("settings.oldPogChamp", "Return old PogChamp");
 
 			settingsContent.appendChild(createElementWithText("h2", "Account"));
@@ -2368,6 +2385,7 @@ class Settings {
 
 	developer = false
 
+	emojiSet = "twemoji"
 	emoteSize = 3
 	oldPogChamp = true
 
@@ -2560,6 +2578,7 @@ function pushInputText(tx) {
 class AutocompleteSuggestion {
 	image = ""
 	text = ""
+	value = ""
 }
 
 var suggestionBox;
@@ -2620,7 +2639,7 @@ function suggestAutocomplete() {
 
 				c.appendChild(document.createTextNode(s.text));
 
-				c.addEventListener("click", () => { suggestionPush(s.text); });
+				c.addEventListener("click", () => { suggestionPush(s.value); });
 				suggestionBox.appendChild(c);
 			}
 
@@ -2686,14 +2705,24 @@ function* getEmoteSuggestions(text) {
 
 		if (map == undefined) return;
 		for (var u of map.values()) {
-			if (u.getName().toLowerCase().includes(text)) {
-				var sug = new AutocompleteSuggestion();
-				sug.text = u.getName();
-				sug.image = u.getImageURL(settings.emoteSize);
+			var names = [u.getName()];
 
-				yield sug;
+			if (u.provider == "emoji")
+				names = u.shorts;
+
+			for (var name of names) {
+				if (name.toLowerCase().includes(text)) {
+					var sug = new AutocompleteSuggestion();
+					sug.text = name;
+					sug.image = u.getImageURL(settings.emoteSize);
+					if (u.provider == "emoji")
+						sug.value = u.id;
+					else sug.value = name;
+
+					yield sug;
+					break;
+				}
 			}
-			else yield;
 		}
 	}
 }
@@ -2701,15 +2730,13 @@ function* getEmoteSuggestions(text) {
 function* getMentionSuggestions(text) {
 	for (var u of cachedUsernames.entries()) {
 		if (isUserBlocked(u[0])) {
-			yield;
 			continue;
 		};
 		if (u[1].toLowerCase().includes(text)) {
 			var sug = new AutocompleteSuggestion();
-			sug.text = "@" + u[1];
+			sug.value = sug.text = "@" + u[1];
 			yield sug;
 		}
-		else yield;
 	}
 }
 

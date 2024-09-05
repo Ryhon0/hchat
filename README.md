@@ -19,6 +19,8 @@ This license is subject to change.
 
 ### Third party assets
 * [Bootstrap Icons](https://icons.getbootstrap.com/)
-* [Twemoji](https://github.com/twitter/twemoji)
 * [tld-list](https://github.com/umpirsky/tld-list/blob/master/data/en/tld.txt)
+* [emoji-data](https://github.com/iamcal/emoji-data)
+* [Twemoji](https://github.com/twitter/twemoji)
+* [blobmoji](https://github.com/C1710/blobmoji)
 * https://freesound.org/people/Porphyr/sounds/191678/

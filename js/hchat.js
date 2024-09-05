@@ -94,6 +94,11 @@ async function getJSONCached(url, opts = { timeout: 5000 }) {
 
 	var m = await ch.match(url);
 	if (m) {
+		const date = new Date(m.headers.get('date'))
+		if (Date.now() > date.getTime() + 1000 * 60 * 60 * 24 * 3) {
+			ch.delete(url);
+			return await getJSONCached(url, opts);
+		}
 		return await m.json();
 	}
 	else {
@@ -150,7 +155,7 @@ class HChat {
 
 	async init() {
 		// Run requests concurently
-		var emojiShortCodes = {};
+		var emojiData = {};
 		var twitchBadges = {};
 		var tldResult = "";
 		var sevenTVGlobalSet = {}
@@ -160,7 +165,7 @@ class HChat {
 		var FFZBadges = {}
 		await Promise.allSettled(
 			[
-				(async () => { emojiShortCodes = await getJSON("/data/emoji_shortcodes.json"); })(),
+				(async () => { emojiData = await getJSON("/data/emojis.json"); })(),
 				(async () => { twitchBadges = await this.Twitch.getGlobalBadges(); })(),
 				(async () => { tldResult = (await (await fetch("/data/tlds.txt")).text()).split('\n'); })(),
 				(async () => { sevenTVGlobalSet = await this.SevenTV.getGlobalEmoteSet(); })(),
@@ -173,48 +178,36 @@ class HChat {
 
 		// Emojis
 		{
-			for (var ename in emojiShortCodes) {
-				var oguni = emojiShortCodes[ename];
-				var euni = oguni;
+			var preferedSet = settings.emojiSet;
+			for (var unified in emojiData) {
+				var e = emojiData[unified];
+				var shorts = e["shorts"];
 
-				{
-					var cs = [...euni];
-					if (cs.length <= 3 && cs.indexOf('\uFE0F') == 1)
-						euni = [cs[0], ...cs.splice(2)].join('');
-				}
-
-				function toCodePoint(unicodeSurrogates, sep) {
-					var
-						r = [],
-						c = 0,
-						p = 0,
-						i = 0;
-					while (i < unicodeSurrogates.length) {
-						c = unicodeSurrogates.charCodeAt(i++);
-						if (p) {
-							r.push((0x10000 + ((p - 0xD800) << 10) + (c - 0xDC00)).toString(16));
-							p = 0;
-						} else if (0xD800 <= c && c <= 0xDBFF) {
-							p = c;
-						} else {
-							r.push(c.toString(16));
-						}
-					}
-					return r.join(sep || '-');
-				}
+				var uni = "";
+				for (var hex of unified.split("-"))
+					uni += String.fromCodePoint(parseInt(hex, 16));
 
 				var ei = new EmoteInfo();
-				ei.id = ename;
-				ei.name = ename;
-				ei.alias = euni;
+				ei.id = uni;
+				ei.name = shorts[0];
+				ei.alias = shorts[0];
+				ei.shorts = shorts;
 				ei.provider = "emoji";
+
+				var selectedSet = preferedSet;
+				if (!e[selectedSet]) {
+					if (!e.twemoji)
+						selectedSet = "google";
+					else
+						selectedSet = "twemoji";
+				}
 				ei.urls =
 				{
-					4: "/assets/twemoji/" + toCodePoint(euni, '-') + ".svg"
-				}
+					4: "/assets/emotes/" + selectedSet + "/" + unified.toLowerCase() + ".png"
+				};
 
-				this.uniToEmoji.set(euni, ei);
-				this.emojis.set(ename, ei);
+				this.uniToEmoji.set(uni, ei);
+				this.emojis.set(ei.name, ei);
 			}
 		}
 
