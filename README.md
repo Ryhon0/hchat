@@ -24,4 +24,5 @@ This license is subject to change.
 * [Twemoji](https://github.com/twitter/twemoji)
 * [blobmoji](https://github.com/C1710/blobmoji)
 * [fluentui-emoji-pack](https://github.com/Ryhon0/fluentui-emoji-pack)
+* [SerenityOS Emoji](https://github.com/SerenityOS/serenity/tree/master/Base/res/emoji)
 * https://freesound.org/people/Porphyr/sounds/191678/

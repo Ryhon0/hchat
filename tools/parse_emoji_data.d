@@ -10,7 +10,7 @@ import std.string;
 
 void main()
 {
-	int total, twemoji, apple, google, facebook, blob, fluent;
+	int total, twemoji, apple, google, facebook, blob, fluent, serenity;
 
 	File f = File("../data/emoji-data.json", "r");
 	char[] jstr;
@@ -34,6 +34,7 @@ void main()
 		jv["facebook"] = exists("../assets/emotes/facebook/" ~ unified.toLower ~ ".png");
 		jv["blob"] = exists("../assets/emotes/blob/" ~ unified.toLower ~ ".png");
 		jv["fluent"] = exists("../assets/emotes/fluent/" ~ unified.toLower ~ ".png");
+		jv["serenity"] = exists("../assets/emotes/serenity/" ~ unified.toLower ~ ".png");
 
 		jv["shorts"] = shorts;
 		outData[unified.toLower] = jv;
@@ -51,6 +52,8 @@ void main()
 			blob++;
 		if (jv["fluent"].boolean)
 			fluent++;
+		if (jv["serenity"].boolean)
+			serenity++;
 	}
 
 	foreach (JSONValue emoji; emojiData.array)
@@ -76,4 +79,5 @@ void main()
 	writeln("Facebook: ", facebook, " (", (facebook / cast(float) total) * 100, "%)");
 	writeln("Blob: ", blob, " (", (blob / cast(float) total) * 100, "%)");
 	writeln("Fluent: ", fluent, " (", (fluent / cast(float) total) * 100, "%)");
+	writeln("Serenity: ", serenity, " (", (serenity / cast(float) total) * 100, "%)");
 }

@@ -1247,6 +1247,8 @@ function createEmoteElement(c) {
 	img.alt = c.info.getName();
 	img.style.setProperty("--emoteWidth", c.info.widthRatio + "em");
 	img.addEventListener("load", () => {
+		if(img.naturalHeight <= 32)
+			img.style.imageRendering = "pixelated";
 		if (c.info.widthRatio == 1) {
 			c.info.widthRatio = img.naturalWidth / img.naturalHeight;
 			img.style.setProperty("--emoteWidth", c.info.widthRatio + "em");
@@ -2293,7 +2295,7 @@ function openSettings() {
 			{
 				var emojiSetSelect = document.createElement("select");
 				settingsContent.appendChild(emojiSetSelect);
-				for(var set of ["twemoji","google","apple","facebook","blob","fluent"])
+				for(var set of ["twemoji","google","apple","facebook","blob","fluent","serenity"])
 				{
 					var opt = document.createElement('option');
 					opt.value = set;
