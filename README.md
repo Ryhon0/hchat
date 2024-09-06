@@ -23,4 +23,5 @@ This license is subject to change.
 * [emoji-data](https://github.com/iamcal/emoji-data)
 * [Twemoji](https://github.com/twitter/twemoji)
 * [blobmoji](https://github.com/C1710/blobmoji)
+* [fluentui-emoji-pack](https://github.com/Ryhon0/fluentui-emoji-pack)
 * https://freesound.org/people/Porphyr/sounds/191678/

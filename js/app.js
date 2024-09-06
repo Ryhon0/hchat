@@ -2293,7 +2293,7 @@ function openSettings() {
 			{
 				var emojiSetSelect = document.createElement("select");
 				settingsContent.appendChild(emojiSetSelect);
-				for(var set of ["twemoji","google","apple","facebook","blob"])
+				for(var set of ["twemoji","google","apple","facebook","blob","fluent"])
 				{
 					var opt = document.createElement('option');
 					opt.value = set;
