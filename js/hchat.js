@@ -752,7 +752,7 @@ class HChatChannel {
 		return blist;
 	}
 
-	emojiRegex = /\p{Emoji_Presentation}/gu;
+	emojiRegex = /\p{RGI_Emoji}/gv;
 
 	/**
 	 * @param { String } text 
