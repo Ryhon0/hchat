@@ -313,8 +313,6 @@ async function loaded() {
 			if (query.length != 0) {
 				if (e.emote.info.name)
 					matches ||= e.emote.info.name.toLowerCase().includes(query);
-				if (e.emote.info.alias)
-					matches ||= e.emote.info.alias.toLowerCase().includes(query);
 			}
 			else matches = true;
 
@@ -333,7 +331,7 @@ async function loaded() {
 			e.info = ei;
 
 			var ee = createEmoteElement(e);
-			ee.addEventListener("click", (ev) => { pushInputText(ev.currentTarget.emote.info.getName()); });
+			ee.addEventListener("click", (ev) => { pushInputText(ev.currentTarget.emote.info.text); });
 			page.appendChild(ee);
 		}
 		filterEmotes(emoteSearch.value);
@@ -561,6 +559,8 @@ function processMessage(pm, beforeElem = undefined) {
 	}
 
 	mi.addEventListener("contextmenu", (ev) => {
+		if (ev.defaultPrevented) return;
+
 		var menu = document.createElement("div");
 		menu.classList.add("messageMenu");
 		document.body.appendChild(menu);
@@ -1033,7 +1033,6 @@ function getBadgeElement(channel, pm) {
 		bi.src = ba.img;
 		bi.classList.add("badge");
 		bi.classList.add("badge-" + ba.id);
-		// bi.alt = ba.title;
 		bi.style.background = ba.backgroundStyle;
 		bl.appendChild(bi);
 
@@ -1199,6 +1198,7 @@ function getFullMessageElement(channel, pm, mentionCb = undefined) {
  */
 function createEmoteElement(c) {
 	const info = c.info;
+	var overlays = c.overlays;
 
 	if (info instanceof Function) {
 		debugger;
@@ -1207,8 +1207,6 @@ function createEmoteElement(c) {
 	const imgspan = document.createElement("span");
 	imgspan.emote = c;
 	imgspan.classList.add("emote");
-
-	var overlays = c.overlays;
 
 	imgspan.addEventListener("mouseover", (ev) => {
 		const c = ev.currentTarget.emote;
@@ -1221,10 +1219,19 @@ function createEmoteElement(c) {
 		var timg = document.createElement("img");
 		timg.src = info.getImageURL(settings.emoteSize);
 		tex.appendChild(timg);
-		if (info.provider != "emoji")
-			tex.appendChild(document.createTextNode(info.getName()));
-		else
-			tex.appendChild(document.createTextNode(info.name));
+		function onLoaded() {
+			if (timg.naturalHeight == 0) return;
+			if (timg.naturalHeight <= 32)
+				timg.style.imageRendering = "pixelated";
+		}
+		onLoaded();
+		timg.addEventListener("load", () => { onLoaded(); });
+		
+		var providerImg = document.createElement("img");
+		providerImg.src = "/assets/emotes/providers/"+info.provider+".png";
+		providerImg.style.height = "1em";
+		tex.appendChild(providerImg);
+		tex.appendChild(document.createTextNode(info.name));
 
 		if (overlays.length) {
 			tex.appendChild(document.createElement("br"));
@@ -1234,7 +1241,11 @@ function createEmoteElement(c) {
 				const timg = document.createElement("img");
 				timg.src = ov.info.getImageURL(settings.emoteSize);
 				tex.appendChild(timg);
-				tex.appendChild(document.createTextNode(ov.info.getName()));
+				var providerImg = document.createElement("img");
+				providerImg.src = "/assets/emotes/providers/"+ov.info.provider+".png";
+				providerImg.style.height = "1em";
+				tex.appendChild(providerImg);
+				tex.appendChild(document.createTextNode(ov.info.name));
 			}
 		}
 
@@ -1244,15 +1255,20 @@ function createEmoteElement(c) {
 	const img = document.createElement("img");
 	img.src = c.info.getImageURL(settings.emoteSize);
 	img.loading = "lazy";
-	img.alt = c.info.getName();
+	img.alt = c.info.text;
 	img.style.setProperty("--emoteWidth", c.info.widthRatio + "em");
-	img.addEventListener("load", () => {
-		if(img.naturalHeight <= 32)
+	function onLoaded() {
+		if (img.naturalHeight == 0) return;
+		if (img.naturalHeight <= 32)
 			img.style.imageRendering = "pixelated";
 		if (c.info.widthRatio == 1) {
 			c.info.widthRatio = img.naturalWidth / img.naturalHeight;
 			img.style.setProperty("--emoteWidth", c.info.widthRatio + "em");
 		}
+	}
+	onLoaded();
+	img.addEventListener("load", () => {
+		onLoaded();
 	}, { once: true });
 	imgspan.appendChild(img);
 
@@ -1260,24 +1276,77 @@ function createEmoteElement(c) {
 	for (ov of overlays) {
 		if (ov.info.modifierFunction) {
 			modimg = ov.info.modifierFunction(modimg);
-			img.alt += " " + ov.info.getName();
+			img.alt += " " + ov.info.name;
 		}
 		else {
 			const oimg = document.createElement("img");
 			oimg.loading = "lazy";
 			oimg.src = ov.info.getImageURL(settings.emoteSize);
-			img.alt += ov.info.getName();
+			img.alt += " " + ov.info.name;
 			oimg.style.setProperty("--emoteWidth", ov.info.widthRatio + "em");
-			oimg.addEventListener("load", () => {
-				if (ov.info.widthRatio == 1) {
+			function onLoaded() {
+				if (oimg.naturalHeight == 0) return;
+				if (oimg.naturalHeight <= 32)
+					oimg.style.imageRendering = "pixelated";
+				if (c.info.widthRatio == 1) {
 					ov.info.widthRatio = oimg.naturalWidth / oimg.naturalHeight;
-					oimg.style.setProperty("--emoteWidth", ov.info.widthRatio + "em");
+					oimg.style.setProperty("--emoteWidth", c.info.widthRatio + "em");
 				}
+			}
+			onLoaded();
+			oimg.addEventListener("load", () => {
+				onLoaded();
 			}, { once: true });
 			imgspan.appendChild(oimg);
 			modimg = oimg;
 		}
 	}
+
+	imgspan.addEventListener("contextmenu", (ev) => {
+		const emotes = [];
+		function pushEmote(e) {
+			emotes.push(e.info);
+			for (ov of e.overlays) {
+				pushEmote(ov);
+			}
+		}
+		pushEmote(c);
+
+		var menu = document.createElement("div");
+		menu.classList.add("messageMenu");
+		document.body.appendChild(menu);
+
+		{
+			var copyEmote = createElementWithText("button", "Copy Emote");
+			copyEmote.onclick = () => {
+				console.log(img);
+				navigator.clipboard.writeText(img.alt);
+				menu.remove();
+			};
+			menu.appendChild(copyEmote);
+		}
+
+		for (e of emotes) {
+			if (!e.infoUrl) continue;
+			var openPage = createElementWithText("button", e.name + " - Open Page");
+			openPage.onclick = () => {
+				window.open(e.infoUrl, '_blank').focus();
+				menu.remove();
+			};
+			menu.appendChild(openPage);
+		}
+
+		setInterval(() => {
+			document.addEventListener("click", function f(ev) {
+				menu.remove();
+				document.removeEventListener("click", f);
+			});
+		}, 0);
+
+		var zoom = document.body.style.zoom;
+		showTooltip([ev.clientX / zoom, ev.clientY / zoom], menu, true);
+		ev.preventDefault();
+	});
 
 	return imgspan;
 }
@@ -1693,7 +1762,7 @@ async function openChannelChat(name, id = undefined) {
 		micon.appendChild(createMentionElement(who.name));
 		micon.appendChild(document.createTextNode(" added "));
 		micon.appendChild(createEmoteElement(new Emote(emote)));
-		micon.appendChild(document.createTextNode(" " + emote.getName()));
+		micon.appendChild(document.createTextNode(" " + emote.name));
 		timelinePush(ch.timeline, mi);
 	});
 	ch.hchannel.onEmoteRemoved = ((who, emote) => {
@@ -1703,7 +1772,7 @@ async function openChannelChat(name, id = undefined) {
 		micon.appendChild(createMentionElement(who.name));
 		micon.appendChild(document.createTextNode(" removed "));
 		micon.appendChild(createEmoteElement(new Emote(emote)));
-		micon.appendChild(document.createTextNode(" " + emote.getName()));
+		micon.appendChild(document.createTextNode(" " + emote.name));
 		timelinePush(ch.timeline, mi);
 	});
 
@@ -1962,6 +2031,7 @@ async function getTwitchEmotesForChannel(account, channel_id) {
 
 			ei.id = e.id;
 			ei.name = e.name;
+			ei.text = e.name;
 
 			ei.urls = hchat.twitchEmoteOverrides.get(e.id);
 			if (!ei.urls) {
@@ -2295,8 +2365,7 @@ function openSettings() {
 			{
 				var emojiSetSelect = document.createElement("select");
 				settingsContent.appendChild(emojiSetSelect);
-				for(var set of ["twemoji","google","apple","facebook","blob","fluent","serenity"])
-				{
+				for (var set of ["twemoji", "google", "apple", "facebook", "blob", "fluent", "serenity"]) {
 					var opt = document.createElement('option');
 					opt.value = set;
 					opt.innerHTML = set[0].toUpperCase() + set.substring(1);
@@ -2637,6 +2706,13 @@ function suggestAutocomplete() {
 					var img = document.createElement("img");
 					img.src = s.image;
 					c.appendChild(img);
+					function onLoaded() {
+						if (img.naturalHeight == 0) return;
+						if (img.naturalHeight <= 32)
+							img.style.imageRendering = "pixelated";
+					}
+					onLoaded();
+					img.addEventListener("load", () => { onLoaded(); });
 				}
 
 				c.appendChild(document.createTextNode(s.text));
@@ -2707,7 +2783,7 @@ function* getEmoteSuggestions(text) {
 
 		if (map == undefined) return;
 		for (var u of map.values()) {
-			var names = [u.getName()];
+			var names = [u.name];
 
 			if (u.provider == "emoji")
 				names = u.shorts;
@@ -2717,9 +2793,7 @@ function* getEmoteSuggestions(text) {
 					var sug = new AutocompleteSuggestion();
 					sug.text = name;
 					sug.image = u.getImageURL(settings.emoteSize);
-					if (u.provider == "emoji")
-						sug.value = u.id;
-					else sug.value = name;
+					sug.value = u.text;
 
 					yield sug;
 					break;
@@ -2743,16 +2817,15 @@ function* getMentionSuggestions(text) {
 }
 
 function* getEmoteOrMentionSuggestions(text) {
-	var it = getEmoteSuggestions(text);
-
-	var res = it.next();
+	var it = getMentionSuggestions(text);
+	res = it.next();
 	while (!res.done) {
 		yield res.value;
 		res = it.next();
 	}
+	it = getEmoteSuggestions(text);
 
-	it = getMentionSuggestions(text);
-	res = it.next();
+	var res = it.next();
 	while (!res.done) {
 		yield res.value;
 		res = it.next();

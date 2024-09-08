@@ -17,7 +17,10 @@ class EmoteInfo {
 
 	/** @type { string } */
 	name = null;
-	alias = null;
+	
+	/** @type { string } */
+	// The alt text of the emote/text to be inserted into input box
+	text = null;
 
 	/** @type { string } */
 	urls = [];
@@ -31,11 +34,10 @@ class EmoteInfo {
 	/** @type { Function | undefined } */
 	modifierFunction = undefined;
 
-	widthRatio = 1;
+	/** @type { string } */
+	infoUrl = null;
 
-	getName() {
-		return this.alias ?? this.name;
-	}
+	widthRatio = 1;
 
 	getImageURL(preferedSize = 3) {
 		if (preferedSize in this.urls)
@@ -189,8 +191,9 @@ class HChat {
 
 				var ei = new EmoteInfo();
 				ei.id = uni;
+				ei.infoUrl = "https://emojipedia.org/" + uni;
+				ei.text = uni;
 				ei.name = shorts[0];
-				ei.alias = shorts[0];
 				ei.shorts = shorts;
 				ei.provider = "emoji";
 
@@ -286,7 +289,7 @@ class HChat {
 							for (var eo of body.pushed) {
 								var ei = this.processSevenTVEmote(eo.value);
 								channel.onEmoteAdded(byWho, ei);
-								channel.channelEmotes.set(ei.getName(), ei);
+								channel.channelEmotes.set(ei.name, ei);
 							}
 						}
 
@@ -440,7 +443,7 @@ class HChat {
 
 			var ee = this.processSevenTVEmote(e);
 
-			list.set(ee.alias ?? ee.name, ee);
+			list.set(ee.name, ee);
 		}
 
 		return list;
@@ -449,14 +452,15 @@ class HChat {
 	processSevenTVEmote(e) {
 		var ee = new EmoteInfo();
 		ee.id = e.id;
+		ee.text = e.name;
+		ee.infoUrl = "https://7tv.app/emotes/" + e.id;
 		ee.urls = {
 			4: "https:" + e.data.host.url + "/4x.webp",
 			3: "https:" + e.data.host.url + "/3x.webp",
 			2: "https:" + e.data.host.url + "/2x.webp",
 			1: "https:" + e.data.host.url + "/1x.webp",
 		}
-		ee.name = e.data.name;
-		ee.alias = e.name;
+		ee.name = e.name;
 		ee.provider = hchatEmoteProviderSevenTV;
 		ee.overlay = (e.flags & 1) != 0;
 		var w = e.data.host.files[0].width;
@@ -477,6 +481,8 @@ class HChat {
 
 			var ee = new EmoteInfo();
 			ee.id = e.id;
+			ee.text = e.code;
+			ee.infoUrl = "https://betterttv.com/emotes/" + e.id;
 			ee.urls =
 			{
 				3: "https://cdn.betterttv.net/emote/" + e.id + "/3x",
@@ -503,8 +509,10 @@ class HChat {
 
 			var ee = new EmoteInfo();
 			ee.id = e.id;
+			ee.infoUrl = "https://www.frankerfacez.com/emoticon/" + e.id;
 			ee.urls = e.urls;
 			ee.name = e.name;
+			ee.text = e.name;
 			ee.provider = hchatEmoteProviderFFZ;
 			ee.overlay = !!e.modifier;
 			ee.widthRatio = e.width / e.height;
@@ -814,6 +822,7 @@ class HChatChannel {
 				var e = new EmoteInfo();
 				e.id = id;
 				e.name = name;
+				e.text = e.name;
 				e.urls = this.hchat.twitchEmoteOverrides.get(id) ??
 				{
 					1: "https://static-cdn.jtvnw.net/emoticons/v2/" + id + "/default/dark/1.0",
