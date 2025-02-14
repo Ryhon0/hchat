@@ -1155,8 +1155,11 @@ function getFullMessageElement(channel, pm, mentionCb = undefined) {
 	var mi = document.createElement("span");
 
 	var namecolor = pm.tags.color;
-	cachedUserColors.set(pm.username(), namecolor);
-	cachedUsernames.set(pm.userId(), pm.displayName());
+	if (pm.username()) {
+		cachedUserColors.set(pm.username(), namecolor);
+		if (pm.userId())
+			cachedUsernames.set(pm.userId(), pm.displayName());
+	}
 
 	var isAction = false;
 	if (pm.content.startsWith("ACTION") && pm.content[pm.content.length - 1] == "") {
@@ -1226,9 +1229,9 @@ function createEmoteElement(c) {
 		}
 		onLoaded();
 		timg.addEventListener("load", () => { onLoaded(); });
-		
+
 		var providerImg = document.createElement("img");
-		providerImg.src = "/assets/emotes/providers/"+info.provider+".png";
+		providerImg.src = "/assets/emotes/providers/" + info.provider + ".png";
 		providerImg.style.height = "1em";
 		tex.appendChild(providerImg);
 		tex.appendChild(document.createTextNode(info.name));
@@ -1242,7 +1245,7 @@ function createEmoteElement(c) {
 				timg.src = ov.info.getImageURL(settings.emoteSize);
 				tex.appendChild(timg);
 				var providerImg = document.createElement("img");
-				providerImg.src = "/assets/emotes/providers/"+ov.info.provider+".png";
+				providerImg.src = "/assets/emotes/providers/" + ov.info.provider + ".png";
 				providerImg.style.height = "1em";
 				tex.appendChild(providerImg);
 				tex.appendChild(document.createTextNode(ov.info.name));
